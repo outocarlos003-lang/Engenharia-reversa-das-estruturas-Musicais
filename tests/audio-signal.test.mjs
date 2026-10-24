@@ -39,6 +39,22 @@ test('returns an explicitly heuristic tonal-center candidate from harmonic PCM',
   assert.ok(result.tonal_center.confidence === null || (result.tonal_center.confidence >= 0 && result.tonal_center.confidence <= 1));
 });
 
+test('detects energy-change candidates without asserting musical section labels', () => {
+  const sampleRate = 8000;
+  const samples = Array.from({ length: sampleRate * 5 }, (_, i) => {
+    const amplitude = i < sampleRate * 2 ? 0.04 : 0.4;
+    return amplitude * Math.sin(2 * Math.PI * 220 * i / sampleRate);
+  });
+  const result = analyzeAudioSamples({ samples, sampleRate, frameSize: 1024 });
+  assert.ok(Array.isArray(result.section_candidates));
+  assert.ok(result.section_candidates.length >= 1);
+  const transition = result.section_candidates[0];
+  assert.equal(transition.status, 'candidate_transition');
+  assert.ok(Math.abs(transition.time_seconds - 2) <= 1);
+  assert.ok(Math.abs(transition.change_db) >= 5);
+  assert.ok(!('section_label' in transition));
+});
+
 test('rejects invalid PCM input', () => {
   assert.throws(() => analyzeAudioSamples({ samples: [], sampleRate: 44100 }), /must not be empty/);
   assert.throws(() => analyzeAudioSamples({ samples: [0, NaN], sampleRate: 44100 }), /finite numbers/);
