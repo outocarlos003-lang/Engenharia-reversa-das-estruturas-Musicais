@@ -42,12 +42,16 @@ export function decodeWav(buffer) {
 
 export function estimatePitch(samples, sampleRate, {minHz=60,maxHz=1000,minConfidence=0.65}={}) {
   if (!samples?.length || !Number.isFinite(sampleRate) || sampleRate<=0) return {frequency_hz:null,midi:null,confidence:0};
-  let mean=0; for (const x of samples) mean+=x; mean/=samples.length;
-  const centered=new Float32Array(samples.length); let energy=0;
-  for(let i=0;i<samples.length;i++){centered[i]=samples[i]-mean;energy+=centered[i]*centered[i];}
-  if(energy/samples.length<1e-7) return {frequency_hz:null,midi:null,confidence:0};
-  const minLag=Math.max(2,Math.floor(sampleRate/maxHz));
-  const maxLag=Math.min(samples.length-2,Math.ceil(sampleRate/minHz));
+  const factor=Math.max(1,Math.floor(sampleRate/8000));
+  const reduced=new Float32Array(Math.ceil(samples.length/factor));
+  for(let i=0,j=0;i<samples.length;i+=factor,j++){let sum=0,n=0;for(let k=i;k<Math.min(samples.length,i+factor);k++){sum+=samples[k];n++;}reduced[j]=sum/n;}
+  const rate=sampleRate/factor;
+  let mean=0; for (const x of reduced) mean+=x; mean/=reduced.length;
+  const centered=new Float32Array(reduced.length); let energy=0;
+  for(let i=0;i<reduced.length;i++){centered[i]=reduced[i]-mean;energy+=centered[i]*centered[i];}
+  if(energy/reduced.length<1e-7) return {frequency_hz:null,midi:null,confidence:0};
+  const minLag=Math.max(2,Math.floor(rate/maxHz));
+  const maxLag=Math.min(reduced.length-2,Math.ceil(rate/minHz));
   let bestLag=-1,best=-1;
   for(let lag=minLag;lag<=maxLag;lag++){
     let cross=0,left=0,right=0;
@@ -64,7 +68,7 @@ export function estimatePitch(samples, sampleRate, {minHz=60,maxHz=1000,minConfi
     const a=corr(bestLag-1),b=corr(bestLag),d=corr(bestLag+1),den=a-2*b+d;
     if(Math.abs(den)>1e-12) lag+=Math.max(-0.5,Math.min(0.5,0.5*(a-d)/den));
   }
-  const hz=sampleRate/lag, midi=69+12*Math.log2(hz/440);
+  const hz=rate/lag, midi=69+12*Math.log2(hz/440);
   return {frequency_hz:Number(hz.toFixed(2)),midi:Number(midi.toFixed(2)),confidence:Number(best.toFixed(4))};
 }
 
