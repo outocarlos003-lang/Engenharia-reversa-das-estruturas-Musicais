@@ -12,6 +12,7 @@ const DIMENSIONS = Object.freeze([
   ['spectrum', 'Espectro'],
   ['stereo', 'Estéreo'],
   ['instrumental_sound_sources', 'Instrumental / fontes sonoras'],
+  ['mechanical_voice_analysis', 'Identificação e análise mecânica da voz'],
 ]);
 
 function hasValue(value) {
@@ -39,7 +40,7 @@ function record(id, value, status, limitations, extras = {}) {
 }
 
 /**
- * Builds the canonical thirteen-dimension record without fabricating missing data.
+ * Builds the canonical fourteen-dimension record without fabricating missing data.
  * Explicit source annotations take precedence over conservative derivations.
  */
 export function buildMusicalDimensions(source = {}, representation = {}) {
@@ -133,6 +134,22 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
         ...(hasValue(vocalPresence) ? ['source.vocal_presence or source.vocal_content'] : []),
       ], confidence: 0.6 });
       continue;
+    }
+
+    if (id === 'mechanical_voice_analysis') {
+      const voice = source.voice_analysis ?? source.vocal_analysis ?? representation.voice_analysis ?? null;
+      if (hasValue(voice)) {
+        dims[id] = record(id, voice, 'observed', [
+          'O resultado reflete análise ou anotação fornecida pela fonte; não significa que o motor tenha extraído automaticamente esses atributos do áudio.',
+          'Classificação de tipo vocal, registro, formantes, mecanismo de fonação e técnica depende de áudio adequado, segmentação e método validado; metadados incompletos não autorizam completar campos por suposição.',
+          'Efeitos, equalização, sobreposição de vozes e condições de gravação podem alterar os indícios acústicos e dificultar a atribuição de características fisiológicas ao cantor.',
+        ], { method: 'source-provided voice analysis or annotation', evidence: [
+          ...(hasValue(source.voice_analysis) ? ['source.voice_analysis'] : []),
+          ...(hasValue(source.vocal_analysis) ? ['source.vocal_analysis'] : []),
+          ...(hasValue(representation.voice_analysis) ? ['representation.voice_analysis'] : []),
+        ], confidence: 0.6 });
+        continue;
+      }
     }
 
     if (id === 'stereo' && hasValue(source.spatial)) {
