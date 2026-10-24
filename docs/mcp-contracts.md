@@ -6,7 +6,7 @@ O ERM usa o mesmo princípio de catálogo de ferramentas do REA: cada operação
 
 `inspect_audio_artifact`
 
-Retorna formato, duração, canais, sample rate, bit depth quando disponível, hashes e limitações do arquivo.
+Retorna eventos musicais, relações estruturais, evidências e limitações da inferência.
 
 ## Signal
 
