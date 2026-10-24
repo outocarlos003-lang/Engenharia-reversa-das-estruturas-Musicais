@@ -88,3 +88,29 @@ test('uses acoustic F0 only as a non-vocal-specific voice-analysis candidate', (
   assert.equal(result.mechanical_voice_analysis.value.acoustic_f0_track[0].f0_hz, 220);
   assert.match(result.mechanical_voice_analysis.limitations[0], /não confirma que a fonte seja voz humana/);
 });
+
+test('accepts explicit vocal-region annotations without pretending to detect voice automatically', () => {
+  const result = buildMusicalDimensions({
+    vocal_regions: [
+      { start_seconds: 1.25, end_seconds: 3.5, confidence: 0.9, source: 'human annotation' },
+      { start_seconds: -1, end_seconds: 2 },
+      { start_seconds: 4, end_seconds: 4 },
+      { start_seconds: 5, end_seconds: 6, confidence: 2 },
+    ],
+  });
+  assert.equal(result.mechanical_voice_analysis.status, 'observed');
+  assert.equal(result.mechanical_voice_analysis.value.vocal_source_confirmed, true);
+  assert.deepEqual(result.mechanical_voice_analysis.value.vocal_regions, [
+    { start_seconds: 1.25, end_seconds: 3.5, annotation: 'vocal_region', confidence: 0.9, source: 'human annotation' },
+    { start_seconds: 5, end_seconds: 6, annotation: 'vocal_region', confidence: 1, source: 'source annotation' },
+  ]);
+  assert.match(result.mechanical_voice_analysis.limitations[0], /não detectou nem validou automaticamente/);
+});
+
+test('keeps vocal source unconfirmed when only an acoustic F0 track is present', () => {
+  const result = buildMusicalDimensions({
+    audio_analysis: { fundamental_frequency_track: [{ time_seconds: 0.02, f0_hz: 220, periodicity: 0.99, status: 'candidate_periodic_f0' }] },
+  });
+  assert.equal(result.mechanical_voice_analysis.value.vocal_source_confirmed, false);
+  assert.deepEqual(result.mechanical_voice_analysis.value.vocal_regions, []);
+});
