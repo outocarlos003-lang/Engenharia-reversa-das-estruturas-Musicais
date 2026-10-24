@@ -4,7 +4,7 @@ O ERM preserva o padrão investigativo do REA, mas troca o domínio de engenhari
 
 ## Camadas
 
-1. **Source boundary** — recebe uma fonte sonora ou representação musical. O formato do arquivo fica fora do modelo composicional.
+1. **Source boundary** — recebe uma representação musical estruturada.
 2. **Musical representation** — converte a fonte em uma representação dos elementos musicais relevantes.
 3. **Event layer** — representa ocorrências musicais temporalmente localizadas.
 4. **Motif layer** — identifica material recorrente e suas transformações.
