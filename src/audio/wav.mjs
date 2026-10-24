@@ -120,12 +120,17 @@ export function analyzeWavBuffer(buffer, {windowMs=50, hopMs=25}={}) {
       if(i>start && ((v>=0&&previous<0)||(v<0&&previous>=0))) crossings++;
       previous=v;
     }
-    const pitch=estimatePitch(samples.subarray(start,start+window),sampleRate);\n    const frameSamples=samples.subarray(start,start+window);\n    frames.push({start:start/sampleRate,rms:Math.sqrt(energy/window),zero_crossing_rate:crossings/window,...spectralFeatures(frameSamples,sampleRate),...pitch});
+    const pitch=estimatePitch(samples.subarray(start,start+window),sampleRate);
+    const frameSamples=samples.subarray(start,start+window);
+    frames.push({start:start/sampleRate,rms:Math.sqrt(energy/window),zero_crossing_rate:crossings/window,...spectralFeatures(frameSamples,sampleRate),...pitch});
   }
   const rms=frames.map(f=>f.rms);
   const sorted=[...rms].sort((a,b)=>a-b);
   const median=sorted.length?sorted[Math.floor(sorted.length/2)]:0;
-  const peak=Math.max(0,...rms);\n  const meanSquare=samples.length?samples.reduce((sum,value)=>sum+value*value,0)/samples.length:0;\n  const loudnessDbfs=meanSquare>0?10*Math.log10(meanSquare):-Infinity;\n  const average=key=>{const values=frames.map(frame=>frame[key]).filter(Number.isFinite);return values.length?Number((values.reduce((a,b)=>a+b,0)/values.length).toFixed(3)):null;};
+  const peak=Math.max(0,...rms);
+  const meanSquare=samples.length?samples.reduce((sum,value)=>sum+value*value,0)/samples.length:0;
+  const loudnessDbfs=meanSquare>0?10*Math.log10(meanSquare):-Infinity;
+  const average=key=>{const values=frames.map(frame=>frame[key]).filter(Number.isFinite);return values.length?Number((values.reduce((a,b)=>a+b,0)/values.length).toFixed(3)):null;};
   const threshold=Math.max(0.015,median*1.8,peak*0.12);
   const events=[]; let lastOnset=-Infinity, previous=0;
   for(const frame of frames) {
@@ -138,7 +143,8 @@ export function analyzeWavBuffer(buffer, {windowMs=50, hopMs=25}={}) {
   }
   return { ...wav, frames:frames.length, events, dynamics:{rms_min:rms.length?Math.min(...rms):0,rms_median:median,rms_peak:peak,loudness_dbfs:Number.isFinite(loudnessDbfs)?Number(loudnessDbfs.toFixed(3)):null,peak_dbfs:peak>0?Number((20*Math.log10(peak)).toFixed(3)):null,window_ms:windowMs,hop_ms:hopMs}, spectrum:{centroid_hz:average('centroid_hz'),bandwidth_hz:average('bandwidth_hz'),rolloff_hz:average('rolloff_hz'),flatness:average('flatness'),method:'mean of frame-level magnitude-spectrum descriptors; 256-point window'}, limitations:[
     'Eventos são candidatos a ataques estimados por energia; não são uma transcrição de notas.',
-    'Altura é estimada por autocorrelação monofônica; acordes e misturas podem causar erros de oitava ou notas espúrias.',\n    'Tonalidade, compasso e instrumentação não são inferidos pelo analisador WAV básico.',
+    'Altura é estimada por autocorrelação monofônica; acordes e misturas podem causar erros de oitava ou notas espúrias.',
+    'Tonalidade, compasso e instrumentação não são inferidos pelo analisador WAV básico.',
     'Detecção de ataques depende do nível, ruído, mixagem e parâmetros da janela.'
   ]};
 }
