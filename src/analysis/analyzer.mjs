@@ -37,6 +37,49 @@ const median = values => {
   return sorted[Math.floor(sorted.length/2)];
 };
 
+function compareSymbolicAndAcousticRecurrences(motifs, audioAnalysis, source) {
+  const sequenceCandidates = audioAnalysis?.spectral_sequence_recurrence_candidates;
+  if (!Array.isArray(sequenceCandidates) || !sequenceCandidates.length || !motifs.length) return [];
+  const unit = source.time_unit ?? source.timeUnit ?? null;
+  const bpm = Number(source.tempo?.bpm ?? source.bpm);
+  if (unit !== 'seconds' && !(unit === 'beats' && Number.isFinite(bpm) && bpm > 0)) return [];
+  const toSeconds = value => unit === 'beats' ? value * 60 / bpm : value;
+  const candidates = [];
+  for (const motif of motifs) {
+    const occurrences = motif.occurrences ?? [];
+    for (let i = 0; i < occurrences.length; i++) {
+      for (let j = i + 1; j < occurrences.length; j++) {
+        const first = toSeconds(Number(occurrences[i].start));
+        const second = toSeconds(Number(occurrences[j].start));
+        if (!Number.isFinite(first) || !Number.isFinite(second)) continue;
+        const acoustic = sequenceCandidates.find(item =>
+          Math.abs(item.first_sequence.start_seconds - first) <= 1.5
+          && Math.abs(item.second_sequence.start_seconds - second) <= 1.5
+        );
+        if (!acoustic) continue;
+        candidates.push({
+          motif_id: motif.id,
+          first_occurrence_seconds: Number(first.toFixed(3)),
+          second_occurrence_seconds: Number(second.toFixed(3)),
+          acoustic_sequence_match: {
+            first_sequence: acoustic.first_sequence,
+            second_sequence: acoustic.second_sequence,
+            spectral_similarity: acoustic.similarity,
+          },
+          status: 'candidate_cross_modal_recurrence',
+          evidence: ['symbolic motif recurrence based on melodic contour and normalized rhythm', 'nearby recurrence of aligned acoustic spectral profiles'],
+          limitations: [
+            'Temporal alignment requires an explicitly declared time_unit; beat-based events also require an explicit tempo in BPM.',
+            'The acoustic match uses coarse spectral profiles and does not verify the same notes, rhythm or harmony in the audio.',
+            'A time match within tolerance supports a hypothesis only; it does not prove that symbolic events were extracted from the supplied audio.',
+          ],
+        });
+      }
+    }
+  }
+  return candidates;
+}
+
 export async function analyzeMusicalSource(target, options={}) {
   const source=await loadMusicalSource(target);
   const events=[...source.events].sort((a,b)=>onset(a)-onset(b)).map((e,i)=>({...e,id:e.id??`event-${i+1}`,onset:onset(e),duration:Number(e.duration??0),pitch:pitch(e)}));
@@ -68,9 +111,11 @@ export async function analyzeMusicalSource(target, options={}) {
     : null);
   const dimensionsSource = audioAnalysis ? {...source,audio_analysis:audioAnalysis} : source;
   const musicalDimensions=buildMusicalDimensions(dimensionsSource,representation);
+  const crossModalRecurrences=compareSymbolicAndAcousticRecurrences(structure.motifs,audioAnalysis,source);
   return analysisReport({
     target:String(source.source??target),representation,observations,events,
     musical_dimensions:musicalDimensions,
+    cross_modal_recurrence_candidates:crossModalRecurrences,
     motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
     genre:[],
     aesthetics:{status:'insufficient evidence for grounded inference',dimensions:{},character_hypotheses:[]},
