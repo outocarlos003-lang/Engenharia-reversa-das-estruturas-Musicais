@@ -72,6 +72,23 @@ test('tracks temporal spectral changes separately from energy changes', () => {
   assert.ok(result.combined_transition_candidates.some(candidate => candidate.evidence_types.includes('spectrum')));
 });
 
+test('estimates spectral novelty and repeated coarse spectral profiles', () => {
+  const sampleRate = 8000;
+  const samples = Array.from({ length: sampleRate * 8 }, (_, i) => {
+    const seconds = i / sampleRate;
+    const frequency = seconds < 2 || (seconds >= 4 && seconds < 6) ? 220 : 1200;
+    return 0.25 * Math.sin(2 * Math.PI * frequency * seconds);
+  });
+  const result = analyzeAudioSamples({ samples, sampleRate, frameSize: 1024 });
+  assert.ok(Array.isArray(result.spectral_novelty_curve));
+  assert.ok(result.spectral_novelty_candidates.some(candidate => Math.abs(candidate.time_seconds - 2) <= 1));
+  assert.ok(Array.isArray(result.spectral_recurrence_candidates));
+  assert.ok(result.spectral_recurrence_candidates.some(candidate =>
+    Math.abs(candidate.first_window.start_seconds - candidate.second_window.start_seconds) >= 3
+  ));
+  assert.ok(result.spectral_recurrence_candidates.every(candidate => candidate.status === 'candidate_spectral_recurrence'));
+});
+
 test('rejects invalid PCM input', () => {
   assert.throws(() => analyzeAudioSamples({ samples: [], sampleRate: 44100 }), /must not be empty/);
   assert.throws(() => analyzeAudioSamples({ samples: [0, NaN], sampleRate: 44100 }), /finite numbers/);
