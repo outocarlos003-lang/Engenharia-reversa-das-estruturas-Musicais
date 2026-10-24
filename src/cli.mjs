@@ -3,7 +3,7 @@ import { analyzeMusicalSource, runMusicalTool } from './analysis/analyzer.mjs';
 import { buildReconstructionSpec } from './analysis/reconstruction.mjs';
 
 export function help() {
- return ['ERM — Engenharia reversa das estruturas Musicais','','Commands:','  analyze <fonte.json>          análise musical baseada em evidências','  segment <fonte.json>          inspeção das seções declaradas','  infer-genre <fonte.json>      relatório de gênero sem rótulos inventados','  infer-aesthetics <fonte.json> análise estética fornecida pela fonte','  build-reconstruction <fonte.json> especificação de reconstrução','  compare <a.json> <b.json>     comparação estrutural','  mcp                           expõe servidor MCP','','Entrada JSON: events [{start,duration,pitch,...}], tempo, meter, sections e form.','Áudio bruto ainda não é decodificado nesta versão.',`MCP tools: ${catalog().length}`].join('\n');
+ return ['ERM — Engenharia reversa das estruturas Musicais','','Commands:','  analyze <fonte.json>          análise musical baseada em evidências','  segment <fonte.json>          inspeção das seções declaradas','  infer-genre <fonte.json>      relatório de gênero sem rótulos inventados','  infer-aesthetics <fonte.json> análise estética fornecida pela fonte','  build-reconstruction <fonte.json> especificação de reconstrução','  compare <a.json> <b.json>     comparação estrutural','  mcp                           expõe servidor MCP','','Entrada JSON: events [{start,duration,pitch,...}], tempo, meter, sections e form.',`MCP tools: ${catalog().length}`].join('\n');
 }
 
 export async function run(argv = process.argv.slice(2)) {
