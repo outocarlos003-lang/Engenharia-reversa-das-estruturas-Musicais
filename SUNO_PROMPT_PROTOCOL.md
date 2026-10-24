@@ -1,25 +1,26 @@
 # Protocolo de Engenharia-Reversa Musical para SUNO AI
 
 ## Gatilho
-Ative este protocolo somente quando o usuário requisitar explicitamente o “engenheiramento” de uma música específica, sua engenharia reversa musical ou uma formulação equivalente. Não o aplique a perguntas musicais genéricas.
+Ative este protocolo quando o usuário pedir para decodificar, analisar por engenharia reversa, reconstruir ou adaptar uma música específica para o SUNO AI. Se houver áudio anexado, analise o arquivo real; não trate nome do arquivo ou metadados como evidência acústica.
 
-## Objetivo
-Converter a análise da música indicada em um único prompt operacional, pronto para colar no campo de estilo/instruções do SUNO AI, com **no máximo 850 caracteres**, contando espaços e pontuação.
+## Objetivo obrigatório
+Após a análise musical, entregue **um documento Markdown reutilizável** baseado em `docs/modelo-documento-reutilizavel-suno.md`. O documento deve reunir o resumo de engenharia reversa sustentado por evidências e o prompt final adaptado ao SUNO AI, pronto para copiar. Não responda apenas com a análise e não omita o prompt.
 
 ## Procedimento
-1. Identifique, quando disponíveis, gênero e subgênero, época/estética, energia, andamento aproximado, groove, métrica, tonalidade ou caráter harmônico, instrumentação, timbres, desenho melódico, harmonia, dinâmica, estrutura, interpretação vocal, produção, mixagem e evolução emocional.
-2. Priorize características audíveis e decisões de produção que expliquem a identidade sonora; diferencie elementos centrais de adornos.
-3. Transforme a análise em instruções concretas e executáveis para geração musical. Use verbos de comando e relações claras entre elementos: estabelecer, sustentar, contrastar, intensificar, suspender, resolver, sobrepor, recuar e finalizar.
-4. Preserve a assinatura estilística geral sem afirmar certeza sobre detalhes que não possam ser inferidos. Se necessário, descreva qualidades sonoras em vez de inventar parâmetros exatos.
-5. Produza uma síntese integrada, não uma lista de observações desconexas. Elimine redundâncias, adjetivos vazios, explicações, prefácios e comentários posteriores.
-6. Não reproduza nem solicite letras protegidas por direitos autorais. Descreva voz, fraseado, tema e função narrativa em termos gerais; não peça imitação exata da voz de um artista vivo. Oriente-se por atributos musicais, não por cópia literal.
-7. Antes de responder, confira o limite de 850 caracteres. Se exceder, comprima sem eliminar os traços sonoros determinantes.
-
-## Norma de estilo
-A redação deve ser simultaneamente **taxativa, intuitiva, sugestiva, concisa, aforística, expressiva, normativa e imperativa**. Cada frase deve orientar uma decisão musical. Use linguagem sensorial precisa e comandos diretos; converta a intenção artística em comportamento sonoro.
+1. Leia este protocolo e o modelo reutilizável antes de compor a resposta.
+2. Inspecione o áudio anexado ou a fonte indicada. Verifique duração, formato, canais e taxa de amostragem quando possível; use o pipeline ERM se compatível. Se o formato não for suportado, decodifique por um meio disponível e declare essa limitação; nunca alegue ter executado o pipeline se não o executou.
+3. Investigue, quando houver evidência, gênero/subgênero, época/estética, energia, andamento, groove, métrica, centro tonal/caráter harmônico, instrumentação, timbres, desenho melódico, harmonia, dinâmica, estrutura, interpretação vocal, produção, mixagem e evolução emocional.
+4. Priorize características audíveis e decisões de produção que expliquem a identidade sonora. Separe explicitamente observações medidas, inferências e interpretações. Informe intervalos temporais, método, confiança e limitações quando pertinentes.
+5. Converta a análise em instruções musicais concretas e executáveis. Use verbos de comando e relações claras: estabelecer, sustentar, contrastar, intensificar, suspender, resolver, sobrepor, recuar e finalizar.
+6. Preserve a assinatura estilística geral sem inventar parâmetros, instrumentos, acordes, letras ou seções. Marque incertezas como hipóteses; não transforme estimativas automáticas em fatos confirmados.
+7. Não reproduza letras protegidas por direitos autorais nem solicite imitação exata da voz de artista vivo. Descreva atributos vocais e musicais gerais.
+8. Redija o prompt final em português ou inglês conforme melhor sirva ao SUNO e à intenção do usuário. Seja taxativo, intuitivo, sugestivo, conciso, aforístico, expressivo, normativo e imperativo. Cada frase deve orientar uma decisão sonora.
+9. Mantenha o prompt SUNO isolado em uma seção própria, sem título dentro do bloco copiável, com **máximo absoluto de 850 caracteres** contando espaços e pontuação. Valide com `node scripts/validate-suno-prompt.mjs "<prompt>"` sempre que o ambiente do repositório estiver disponível; se não estiver, conte os caracteres por outro método confiável.
+10. Preencha o documento reutilizável com título/nome de referência, dados técnicos conhecidos, achados principais, estrutura temporal provisória, limites de confiança, prompt final, data/versão se disponível e campos que facilitem reaproveitamento futuro. Não deixe placeholders sem marcar como “não informado”.
+11. Antes de enviar, faça uma verificação final: (a) documento reutilizável presente; (b) prompt SUNO presente; (c) prompt com até 850 caracteres; (d) sem detalhes musicais inventados; (e) limitações explícitas; (f) prompt pronto para copiar e reutilizar.
 
 ## Formato obrigatório da resposta
-Entregue somente o prompt final, sem título, introdução, contagem de caracteres ou análise externa. O texto deve ser autossuficiente e pronto para SUNO AI. Respeite o máximo absoluto de 850 caracteres.
+Entregue o documento reutilizável completo, usando o modelo do repositório. O documento pode conter análise e notas de evidência fora do campo de prompt; o limite de 850 caracteres aplica-se exclusivamente ao texto do prompt destinado ao SUNO. O prompt deve aparecer em bloco próprio para cópia. Não substitua o documento por uma resposta solta de análise nem por uma lista sem estrutura.
 
-## Modelo mental de composição
-Identidade sonora → pulso e groove → instrumentação e timbres → voz/fraseado (se aplicável) → progressão e contraste → clímax/resolução → produção e mixagem. Reordene ou omita dimensões conforme a música exigir; não force todos os itens em todo prompt.
+## Modelo mental
+Fonte → validação/decodificação → observações → inferências com confiança → mapa estrutural → decisões sonoras essenciais → prompt SUNO validado → documento reutilizável.
