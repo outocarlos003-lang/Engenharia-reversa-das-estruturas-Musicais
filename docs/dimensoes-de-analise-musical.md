@@ -73,6 +73,20 @@ Descreve imagem espacial e diferenças entre canais. Quando disponíveis, use co
 
 Descreve se o material disponível indica conteúdo instrumental, vocal ou misto, e quais fontes sonoras/instrumentos estão documentados ou identificados. Registre separadamente a presença de voz (cantada, falada, coral ou backing vocals), as fontes instrumentais (por exemplo, bateria, baixo, guitarra, piano, sintetizadores e instrumentos acústicos) e a confiança de cada identificação. Diferencie metadados fornecidos, anotação humana e detecção automática. Não conclua que uma faixa é instrumental apenas porque não há metadados vocais; na ausência de evidência, mantenha a presença vocal como desconhecida. O espectro isolado não identifica com segurança instrumentos específicos.
 
+### 14. Identificação e análise mecânica da voz
+
+Descreve características acústicas e técnicas observáveis da voz humana, sem confundir o som gravado com uma conclusão clínica ou anatômica sobre o aparelho vocal. Quando houver evidência adequada, registrar separadamente:
+
+- **Identificação da fonte vocal:** voz cantada, fala, rap, vocalizações, coro, backing vocals e possíveis camadas simultâneas; indicar se a fonte é anotação humana, metadado ou saída de um modelo.
+- **Altura e extensão:** trajetória de F0, tessitura observada no trecho, extensão estimada, estabilidade de afinação, portamentos e transições de registro. Informar unidade, janela e tratamento de trechos sem F0 confiável.
+- **Registro e mecanismo de fonação:** descrições como modal, falsete, vocal fry ou voz soprosa apenas quando sustentadas por análise ou anotação especializada; não deduzir mecanismo fisiológico apenas por timbre.
+- **Timbre e ressonância acústica:** medidas ou descrições de formantes, inclinação espectral, harmônicos, aspereza, soprosidade e nasalidade percebida. Diferenciar medidas acústicas de rótulos perceptivos; formantes podem ser afetados por vogal, idioma, microfone e processamento.
+- **Articulação e emissão:** legato/staccato vocal, ataques, finais, consoantes, dicção, duração de vogais, respirações audíveis e coordenação temporal com o acompanhamento.
+- **Modulação e dinâmica:** presença, taxa e extensão do vibrato; intensidade e variação dinâmica; estabilidade de notas sustentadas, glissandi e ornamentos, sempre com intervalo temporal.
+- **Processamento vocal:** indícios ou metadados de correção de afinação, compressão, distorção, reverberação, delay, duplicação e harmonização. Não afirmar ferramenta ou cadeia de estúdio específica sem fonte verificável.
+
+Cada característica deve incluir `method`, `evidence`, `confidence`, `time_range` e `limitations`. A presença de uma voz não prova que seja possível identificar uma pessoa; não inferir identidade, idade, gênero, saúde ou condição fisiológica do intérprete. Áudio misturado, ruído, reverberação e efeitos podem tornar a análise incerta. Na ausência de evidência específica de voz, manter esta dimensão como desconhecida; descritores espectrais genéricos não bastam para identificar técnica vocal.
+
 ## Campos comuns e validação
 
 Cada resultado deve, sempre que possível, conter:
