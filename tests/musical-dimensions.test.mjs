@@ -76,3 +76,15 @@ test('does not infer mechanical voice properties from absent metadata or generic
   assert.equal(result.mechanical_voice_analysis.value, null);
   assert.equal(result.mechanical_voice_analysis.status, 'unknown');
 });
+
+test('uses acoustic F0 only as a non-vocal-specific voice-analysis candidate', () => {
+  const result = buildMusicalDimensions({
+    audio_analysis: {
+      fundamental_frequency_track: [{ time_seconds: 0.02, f0_hz: 220, periodicity: 0.99, status: 'candidate_periodic_f0' }],
+    },
+  });
+  assert.equal(result.mechanical_voice_analysis.status, 'inferred');
+  assert.equal(result.mechanical_voice_analysis.value.vocal_source_confirmed, false);
+  assert.equal(result.mechanical_voice_analysis.value.acoustic_f0_track[0].f0_hz, 220);
+  assert.match(result.mechanical_voice_analysis.limitations[0], /não confirma que a fonte seja voz humana/);
+});
