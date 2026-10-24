@@ -5,13 +5,13 @@ import { buildReconstructionSpec } from './reconstruction.mjs';
 import { analyzeWavFile } from '../audio/wav.mjs';
 
 const LIMITATIONS = [
-  'Áudio WAV é analisado por energia e candidatos a ataques; esta etapa não é transcrição polifônica nem reconhecimento confiável de notas.',
+  'Áudio WAV é analisado por energia, candidatos a ataques e estimativas exploratórias de altura monofônica; isso não equivale a transcrição polifônica.',
   'Gênero, estética e intenção semântica são hipóteses e não fatos diretamente medidos.',
 ];
 
 export async function loadMusicalSource(target) {
   if (typeof target !== 'string' || !target.trim()) throw new Error('target must be a non-empty path or JSON string');
-  if (!target.trim().startsWith('{') && !target.trim().startsWith('[') && /\\.wav$/i.test(target.trim())) {
+  if (!target.trim().startsWith('{') && !target.trim().startsWith('[') && /\.wav$/i.test(target.trim())) {
     const audio = await analyzeWavFile(target.trim());
     return {
       source: target.trim(), events: audio.events, dynamics: audio.dynamics,
