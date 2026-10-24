@@ -20,7 +20,7 @@ export function buildTrackProfile(source = {}, computed = {}) {
   const suppliedTempo = first(suppliedFeatures.tempo, source.tempo?.bpm, typeof source.tempo === 'number' ? source.tempo : undefined);
   const tempo = first(suppliedTempo, computed.tempo);
   const key = first(suppliedFeatures.key, source.key, source.tonal_center, source.harmony?.key);
-  const loudness = first(suppliedFeatures.loudness, source.loudness, source.dynamics?.loudness);
+  const loudness = first(suppliedFeatures.loudness, source.loudness, source.dynamics?.loudness, source.dynamics?.loudness_dbfs);
   const energyStructure = first(suppliedFeatures.energy_structure, source.energy_structure, source.dynamics?.energy_structure, source.dynamics?.energy_curve);
   const spectrum = first(suppliedFeatures.spectrum, source.spectrum, source.spectral_profile);
   const stereo = first(suppliedFeatures.stereo, source.stereo, source.spatial?.stereo, source.spatial);
