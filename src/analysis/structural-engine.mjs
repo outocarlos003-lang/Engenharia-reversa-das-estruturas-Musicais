@@ -143,9 +143,9 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     const priorFunction=harmonicLabel(priorHarmonicEvent);
     const terminalFunction=harmonicLabel(previous);
     const cadencePairs=[
-      {from:/^(V|V7|V9|V11|V13|dominant|dominant7)$/i,to:/^(I|i|I6|i6|I64|i64|tonic|tonicmajor|tonicminor|I:maj|i:maj|I:min|i:min)$/ ,label:'dominant_to_tonic'},
-      {from:/^(vii°|vii°7|viiø7|leadingtone|leadingtoneseventh)$/i,to:/^(I|i|I6|i6|I64|i64|tonic|tonicmajor|tonicminor|I:maj|i:maj|I:min|i:min)$/i,label:'leading_tone_to_tonic'},
-      {from:/^(IV|IV7|subdominant)$/i,to:/^(I|i|tonic|tonicmajor|tonicminor)$/i,label:'subdominant_to_tonic'},
+      {from:/^(V|V7|V9|V11|V13|dominant|dominant7)$/,to:/^(I|i|I6|i6|I64|i64|tonic|tonicmajor|tonicminor|I:maj|i:maj|I:min|i:min)$/,label:'dominant_to_tonic'},
+      {from:/^(viidim|viidim7|viihalfdim7|leadingtone|leadingtoneseventh)$/,to:/^(I|i|I6|i6|I64|i64|tonic|tonicmajor|tonicminor|I:maj|i:maj|I:min|i:min)$/,label:'leading_tone_to_tonic'},
+      {from:/^(IV|IV7|subdominant)$/,to:/^(I|i|tonic|tonicmajor|tonicminor)$/,label:'subdominant_to_tonic'},
     ];
     const cadence=cadencePairs.find(pair=>pair.from.test(priorFunction??'')&&pair.to.test(terminalFunction??''));
     if(cadence){
