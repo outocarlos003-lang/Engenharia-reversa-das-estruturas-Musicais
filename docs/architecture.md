@@ -1,24 +1,35 @@
 # Arquitetura ERM
 
-O ERM preserva o padrão investigativo do REA, mas troca o domínio de engenharia reversa de software pelo domínio musical.
+O ERM preserva o padrão investigativo do REA, mas troca o domínio de engenharia reversa de software pelo domínio da construção musical.
 
 ## Camadas
 
-1. **Artifact layer** — identifica o arquivo e seus metadados.
-2. **Signal layer** — extrai medições acústicas e espaciais.
-3. **Event layer** — localiza ataques, transientes e ocorrências relevantes.
-4. **Motif layer** — agrupa material recorrente.
-5. **Section layer** — segmenta partes musicais por comportamento e repetição.
-6. **Form layer** — representa a macroestrutura hierárquica.
-7. **Semantic layer** — infere gênero, subgênero, estética e linguagem de produção.
-8. **Evidence layer** — relaciona conclusões às observações que as sustentam.
-9. **Reconstruction layer** — transforma a análise em uma especificação de reconstrução.
-10. **Validation layer** — compara referência e reconstrução.
+1. **Source boundary** — recebe uma fonte sonora ou representação musical. O formato do arquivo fica fora do modelo composicional.
+2. **Musical representation** — converte a fonte em uma representação dos elementos musicais relevantes.
+3. **Event layer** — representa ocorrências musicais temporalmente localizadas.
+4. **Motif layer** — identifica material recorrente e suas transformações.
+5. **Phrase layer** — representa unidades musicais articuladas por continuidade, cadência, repetição ou contraste.
+6. **Section layer** — segmenta partes por função, comportamento e recorrência.
+7. **Form layer** — representa a macroestrutura e as relações entre seções.
+8. **Musical relations** — modela ritmo, métrica, melodia, harmonia, textura e relações entre camadas.
+9. **Arrangement layer** — descreve instrumentação, distribuição de funções, densidade, dinâmica e espacialidade.
+10. **Semantic layer** — infere gênero, subgênero, estética e linguagem musical.
+11. **Evidence layer** — relaciona conclusões às observações que as sustentam.
+12. **Reconstruction layer** — transforma a análise em especificação independente de DAW.
+13. **Validation layer** — compara referência e reconstrução por relações estruturais.
+
+## Evidência acústica
+
+Características espectrais, energia, transientes, panorama e outras medições acústicas podem ser usadas como **evidência derivada** para inferir propriedades musicais, tímbricas ou de produção. Elas não constituem uma camada da composição por si mesmas.
+
+## O que fica fora
+
+Contêiner, codec, extensão, sample rate, bit depth, tamanho do arquivo e outros metadados do suporte não pertencem ao modelo composicional. Podem existir na infraestrutura de ingestão, mas não devem aparecer como entidades musicais, evidências composicionais ou critérios de reconstrução.
 
 ## Regra de projeto
 
-Nenhuma camada semântica deve apagar os dados de camadas inferiores. Uma classificação como `emo`, por exemplo, deve continuar rastreável às características e decisões que contribuíram para a inferência.
+Nenhuma camada semântica deve apagar dados das camadas inferiores. Uma classificação de gênero ou estética deve continuar rastreável às relações musicais e evidências que contribuíram para a inferência.
 
 ## Domínio de equivalência
 
-O ERM não tenta reproduzir ferramentas proprietárias do REA. Ele reproduz a **forma de trabalho**: catálogo de ferramentas, investigação incremental, evidência, limitações, workflows, MCP, CLI e reconstrução verificável. As ferramentas específicas são substituídas por equivalentes musicais.
+O ERM não copia ferramentas proprietárias do REA. Ele reproduz sua **forma de trabalho**: catálogo de ferramentas, investigação incremental, evidência, limitações, workflows, MCP, CLI, reconstrução e validação. As ferramentas são específicas do domínio musical.
