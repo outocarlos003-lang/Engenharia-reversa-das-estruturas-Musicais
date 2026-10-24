@@ -13,14 +13,7 @@ Um sistema de engenharia reversa musical inspirado na arquitetura conceitual do 
 - **Observed ≠ inferred ≠ interpreted:** observações, inferências analíticas e interpretações estéticas ficam explicitamente separadas.
 - **Hierarquia:** material musical → eventos → motivos → frases → seções → forma → obra.
 - **Reprodução verificável:** uma reconstrução pode ser comparada com a análise original por estrutura, ritmo, métrica, harmonia, melodia, densidade, dinâmica, instrumentação e espacialidade.
-- **Formato independente:** WAV, RIFF, FLAC, MP3 e outros contêineres/codecs não constituem a composição e não são tratados como camadas da arquitetura musical.
 - **MCP + CLI:** agentes podem investigar uma obra por ferramentas MCP ou pelo terminal.
-
-## O que não pertence ao modelo composicional
-
-Informações como extensão do arquivo, contêiner, codec, taxa de amostragem, profundidade de bits, tamanho em bytes e outros metadados técnicos podem ser úteis para ingestão ou reprodução, mas **não são elementos da construção de uma composição**.
-
-Por isso, decodificadores de WAV/RIFF ficam isolados na fronteira de ingestão, fora do núcleo composicional. O adaptador WAV inicial mede energia em janelas e propõe candidatos a ataques; não é transcrição polifônica e não afirma detectar notas, tonalidade ou instrumentos. Depois da ingestão, a investigação trabalha sobre a representação musical e registra as limitações do sinal extraído.
 
 ## Equivalência conceitual com REA
 
@@ -116,32 +109,6 @@ src/analysis/structural-engine.mjs implementa uma primeira camada de inferência
 O motor aceita eventos com start ou onset, duration e pitch ou midi. O tempo deve estar numa unidade consistente, preferencialmente pulsos musicais. A inferência de frases e seções é uma hipótese inicial e ainda precisa ser fortalecida com cadências, hierarquia métrica, vozes simultâneas e validação contra partituras ou anotações de referência. A segmentação registra a pontuação, a classificação e cada fonte de evidência disponível. A recorrência de motivos pode apoiar uma hipótese de agrupamento, mas não estabelece sozinha uma fronteira frasal. O movimento melódico na fronteira é registrado descritivamente (passo, repetição ou salto), sem ser tratado como detector de cadência. Marcadores de término, força cadencial fornecida pela fonte e transições entre funções harmônicas anotadas (por exemplo, V–I) podem apoiar a segmentação. As transições por função são reconhecidas a partir de rótulos harmônicos fornecidos; as relações por símbolos de acorde exigem também uma tônica declarada. Nenhuma delas é deduzida de notas isoladas, e a distinção entre algarismos romanos maiúsculos e minúsculos é preservada. Quando `chord_pitches` ou `chord_notes` contém alturas MIDI numéricas para os dois acordes adjacentes, o motor registra classes de altura comuns e conexões por semitom como descrição de condução de vozes; essa evidência não recebe peso cadencial, não atribui vozes individuais e não prova uma cadência. Pausas, alongamentos e acentos métricos são indícios heurísticos, não prova de frase musical; pausas expressivas podem gerar cortes indevidos, e cadências legato exigem evidência harmônica ou de partitura. As transformações são relações matemáticas entre sequências simbólicas; não provam, isoladamente, função formal ou intenção composicional. O módulo `src/analysis/structural-relations.mjs` acrescenta contexto hierárquico a essas relações, sem esconder a incerteza das fronteiras de frase e seção.
 
 
-## Perfil descritivo da faixa
-
-O relatório também pode carregar um perfil com tom emocional, produção, temática, contexto cultural, gêneros principais e secundários, andamento, tonalidade, loudness, estrutura de energia, espectro e estéreo. Esses campos ficam em `representation.track_profile`, com estado e proveniência por campo.
-
-Os descritores subjetivos (tom emocional, produção, temática, cultura e gênero) são preservados como anotações fornecidas, não apresentados como classificação automática confirmada. Andamento pode ser obtido dos eventos simbólicos quando os onsets permitem estimá-lo; tonalidade, loudness, curva de energia, espectro e estéreo só são preenchidos quando existem dados explícitos compatíveis na fonte. Ausência de medição permanece marcada como indisponível, em vez de ser preenchida por adivinhação com verniz científico.
-
-Exemplo de fonte JSON:
-
-```json
-{
-  "tempo": {"bpm": 98},
-  "key": "D minor",
-  "emotional_tone": ["melancholic", "tense"],
-  "genres": {
-    "primary": ["trip-hop"],
-    "secondary": ["ambient"]
-  },
-  "loudness": {"integrated_lufs": -14.2},
-  "energy_structure": [
-    {"section": "intro", "level": 0.2},
-    {"section": "chorus", "level": 0.8}
-  ],
-  "events": []
-}
-```
-
 ## Estado atual e limitações
 
 O motor estrutural foi adicionado como módulo independente e possui testes de unidade preparados. Ainda é necessário integrá-lo ao fluxo principal do analisador, conectar as ferramentas MCP/CLI a resultados estruturais reais e executar a suíte completa no CI. Portanto, a presença do módulo não significa que toda a pipeline do ERM já esteja operacional.
@@ -149,10 +116,3 @@ O motor estrutural foi adicionado como módulo independente e possui testes de u
 
 
 **Nenhuma música fornecida em conversas anteriores é usada como fixture ou teste deste projeto.**
-
-
-### Medições acústicas disponíveis no adaptador WAV
-
-O adaptador WAV calcula RMS por janela, loudness aproximado em dBFS, pico em dBFS e descritores espectrais por janela (centroide, largura de banda, rolloff de 85% e flatness). O perfil agrega os descritores espectrais das janelas analisadas. Esses valores são medições do sinal decodificado, não rótulos de emoção, gênero ou qualidade de produção.
-
-**Importante:** dBFS não é loudness integrado em LUFS conforme ITU-R BS.1770; o espectro usa uma janela curta de 256 pontos e serve como descrição aproximada. A análise estéreo calcula largura por RMS da diferença normalizada, correlação entre os dois primeiros canais e diferença de nível RMS entre eles. Arquivos mono marcam as métricas estéreo como indisponíveis; arquivos com mais de dois canais não recebem análise espacial completa.
