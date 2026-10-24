@@ -111,6 +111,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     const sig=stable({contour:phrase.contour,motifs:phrase.motif_ids});
     const previous=sections.find(s=>s.signature===sig);
     if(previous){
+      if(!previous.phrase_ids.includes(phrase.id)) previous.phrase_ids.push(phrase.id);
       previous.occurrences.push({phrase_id:phrase.id,start:phrase.start,end:phrase.end});
       previous.confidence=Math.min(0.8,previous.confidence+0.1);
     } else sections.push({
