@@ -7,15 +7,17 @@ function dbfs(amplitude) {
 
 function normalizeChannels(input, channels) {
   if (!Array.isArray(input) && !ArrayBuffer.isView(input)) throw new TypeError('samples must be an array or typed array');
-  const values = Array.from(input, Number);
-  if (!values.length) throw new Error('samples must not be empty');
-  if (!values.every(Number.isFinite)) throw new Error('samples must contain only finite numbers');
   if (Array.isArray(input) && input.length && Array.isArray(input[0])) {
     const count = input.length;
     const width = input[0].length;
     if (!width || input.some(frame => !Array.isArray(frame) || frame.length !== width)) throw new Error('multichannel samples must have a consistent channel count per frame');
-    return Array.from({ length: width }, (_, channel) => input.map(frame => Number(frame[channel])));
+    const result = Array.from({ length: width }, (_, channel) => input.map(frame => Number(frame[channel])));
+    if (result.some(channel => !channel.every(Number.isFinite))) throw new Error('samples must contain only finite numbers');
+    return result;
   }
+  const values = Array.from(input, Number);
+  if (!values.length) throw new Error('samples must not be empty');
+  if (!values.every(Number.isFinite)) throw new Error('samples must contain only finite numbers');
   if (!Number.isInteger(channels) || channels < 1 || channels > 32) throw new Error('channels must be an integer between 1 and 32 for interleaved samples');
   if (values.length % channels !== 0) throw new Error('interleaved sample count must be divisible by channels');
   return Array.from({ length: channels }, (_, channel) => values.filter((_, i) => i % channels === channel));
