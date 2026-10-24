@@ -9,14 +9,35 @@ export function evidence({ id, claim, value, type = OBSERVATION_TYPES.MEASURED, 
   return { id, claim, value, type, confidence, sources, limitations };
 }
 
+export function musicalRepresentation(input = {}) {
+  return {
+    schema_version: '0.1.0',
+    meter: input.meter ?? null,
+    tempo: input.tempo ?? null,
+    rhythm: input.rhythm ?? {},
+    melody: input.melody ?? {},
+    harmony: input.harmony ?? {},
+    events: input.events ?? [],
+    motifs: input.motifs ?? [],
+    phrases: input.phrases ?? [],
+    sections: input.sections ?? [],
+    form: input.form ?? [],
+    instrumentation: input.instrumentation ?? {},
+    dynamics: input.dynamics ?? {},
+    spatial: input.spatial ?? {},
+    limitations: input.limitations ?? [],
+  };
+}
+
 export function analysisReport(input) {
   return {
     schema_version: '0.1.0',
     target: input.target,
-    artifact: input.artifact ?? null,
+    representation: input.representation ?? musicalRepresentation(),
     observations: input.observations ?? [],
     events: input.events ?? [],
     motifs: input.motifs ?? [],
+    phrases: input.phrases ?? [],
     sections: input.sections ?? [],
     form: input.form ?? [],
     genre: input.genre ?? [],
