@@ -26,7 +26,6 @@ export function musicalRepresentation(input = {}) {
     instrumentation: input.instrumentation ?? {},
     dynamics: input.dynamics ?? {},
     spatial: input.spatial ?? {},
-    track_profile: input.track_profile ?? {},
     limitations: input.limitations ?? [],
   };
 }
