@@ -128,6 +128,8 @@ A análise produz pico e RMS em dBFS, fator de crista, curva RMS em janelas de 1
 
 A análise temporal também identifica **candidatos a transição de energia** comparando bins RMS de 1 segundo e sinalizando mudanças locais de pelo menos 5 dB, com separação mínima de 2 segundos entre candidatos. Cada resultado inclui tempo aproximado, diferença de nível, RMS antes/depois e confiança heurística. Isso não identifica verso, refrão, ponte ou fronteiras formais confirmadas: pausas, automação de volume, mudanças de arranjo e eventos acústicos podem causar falsos positivos. Os candidatos e a curva RMS alimentam a dimensão canônica `energy_structure` quando não há anotação explícita que tenha precedência.
 
+Os testes sintéticos cobrem tom constante, deslize de frequência e silêncio: no silêncio, não deve haver pares F0 válidos nem estatísticas de variação calculadas. Essas verificações avaliam o comportamento numérico, não a detecção de voz.
+
 Por intervalo anotado, `vocal_region_acoustics` também expõe `f0_adjacent_variation_median_semitones`, o percentil 90 da variação entre quadros adjacentes e a proporção de pares com diferença de até um semitom. A comparação não atravessa quadros incertos. Essas estatísticas descrevem a trilha estimada e não identificam, por si só, vibrato ou instabilidade vocal.
 
 A trilha de F0 também aplica uma correção conservadora a saltos isolados de oitava apenas quando os dois quadros vizinhos são candidatos válidos e concordam dentro de um semitom. A correção registra `raw_f0_hz` e um status específico; quadros incertos e possíveis saltos reais de oitava não são interpolados nem forçados. Essa heurística reduz alguns erros isolados, mas não elimina erros de oitava.
