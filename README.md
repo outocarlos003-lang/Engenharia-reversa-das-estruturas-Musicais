@@ -100,6 +100,25 @@ O ERM pode enviar referências estruturais explícitas para uma instância próp
 - Mantém os fatos musicais ausentes como não especificados; não inventa tonalidade, acordes ou seções.
 - Não faz chamadas de rede durante a análise musical normal.
 
+A orquestração do ciclo de reconstrução está disponível em `src/integrations/suno-workflow.mjs`. Ela submete a geração, aguarda as faixas, entrega cada URL a um adaptador de análise de áudio e aceita um comparador explícito. Como o ERM não inclui um decodificador universal nem faz download remoto de áudio por padrão, ambos os passos de análise/comparação são injetados pelo chamador. Sem comparador, o resultado declara `comparison: null` em vez de sugerir equivalência.
+
+```js
+import { runSunoReconstructionWorkflow } from './src/integrations/suno-workflow.mjs';
+
+const result = await runSunoReconstructionWorkflow({
+  report: ermReport,
+  options: { title: 'Study', style: 'cinematic ambient', instrumental: true },
+  analyzeGeneratedAudio: async ({ track, audioUrl }) => {
+    // Implementar download seguro, decodificação e análise acústica no adaptador.
+    return analyzeTrackAtUrl(audioUrl);
+  },
+  compareReports: async ({ referenceReport, generatedAnalyses }) => {
+    // Comparar apenas dimensões realmente disponíveis nos dois relatórios.
+    return compareMusicalEvidence(referenceReport, generatedAnalyses);
+  },
+});
+```
+
 Exemplo em Node.js:
 
 ```js
