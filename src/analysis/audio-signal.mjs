@@ -106,7 +106,8 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
   const channelSamples = normalizeChannels(samples, channels);
   const frameCount = channelSamples[0].length;
   if (!frameCount || channelSamples.some(channel => channel.length !== frameCount)) throw new Error('all channels must contain the same positive number of samples');
-  const peak = Math.max(...channelSamples.map(channel => Math.max(...channel.map(Math.abs))));
+  let peak = 0;
+  for (const channel of channelSamples) for (const value of channel) peak = Math.max(peak, Math.abs(value));
   const squareSum = channelSamples.reduce((sum, channel) => sum + channel.reduce((s, v) => s + v * v, 0), 0);
   const rms = Math.sqrt(squareSum / (frameCount * channelSamples.length));
   const mono = Array.from({ length: frameCount }, (_, i) => channelSamples.reduce((sum, channel) => sum + channel[i], 0) / channelSamples.length);
