@@ -330,7 +330,8 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
   }
   const spectralEvolutionResult = spectralEvolution(mono, sampleRate, frameSize);
   const energyTransitions = detectEnergyTransitions(energyCurve);
-  const combinedTransitions = combineTransitionCandidates(energyTransitions, spectralEvolutionResult.candidates);\n  let stereo = null;
+  const combinedTransitions = combineTransitionCandidates(energyTransitions, spectralEvolutionResult.candidates);
+  let stereo = null;
   if (channelSamples.length >= 2) {
     const left = channelSamples[0], right = channelSamples[1];
     let cross = 0, leftPower = 0, rightPower = 0, sidePower = 0, midPower = 0;
@@ -361,7 +362,9 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     energy_curve: energyCurve,
     section_candidates: energyTransitions,
     combined_transition_candidates: combinedTransitions,
-    spectrum: spectralFeatures(mono, sampleRate, frameSize),\n    spectral_curve: spectralEvolutionResult.curve,\n    spectral_change_candidates: spectralEvolutionResult.candidates,
+    spectrum: spectralFeatures(mono, sampleRate, frameSize),
+    spectral_curve: spectralEvolutionResult.curve,
+    spectral_change_candidates: spectralEvolutionResult.candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     stereo,
     limitations: [
