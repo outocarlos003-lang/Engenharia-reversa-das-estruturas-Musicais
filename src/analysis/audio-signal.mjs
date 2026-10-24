@@ -259,6 +259,49 @@ function analyzeSpectralNovelty(curve) {
   };
 }
 
+function estimateFundamentalFrequencyTrack(mono, sampleRate) {
+  const frameSeconds = 0.04;
+  const hopSeconds = 0.01;
+  const frameSize = Math.max(64, Math.floor(sampleRate * frameSeconds));
+  const hopSize = Math.max(1, Math.floor(sampleRate * hopSeconds));
+  const minFrequency = 70;
+  const maxFrequency = Math.min(1000, sampleRate / 2);
+  if (mono.length < frameSize || maxFrequency <= minFrequency) return [];
+  const minLag = Math.max(1, Math.floor(sampleRate / maxFrequency));
+  const maxLag = Math.min(frameSize - 2, Math.ceil(sampleRate / minFrequency));
+  const track = [];
+  for (let start = 0; start + frameSize <= mono.length; start += hopSize) {
+    const frame = mono.slice(start, start + frameSize);
+    const mean = frame.reduce((sum, value) => sum + value, 0) / frameSize;
+    for (let i = 0; i < frame.length; i++) frame[i] -= mean;
+    const energy = frame.reduce((sum, value) => sum + value * value, 0);
+    if (energy <= EPSILON) {
+      track.push({ time_seconds: Number(((start + frameSize / 2) / sampleRate).toFixed(3)), f0_hz: null, periodicity: 0, status: 'unvoiced_or_uncertain' });
+      continue;
+    }
+    let bestLag = null, bestCorrelation = -1;
+    for (let lag = minLag; lag <= maxLag; lag++) {
+      let cross = 0, leftEnergy = 0, rightEnergy = 0;
+      for (let i = 0; i < frameSize - lag; i++) {
+        cross += frame[i] * frame[i + lag];
+        leftEnergy += frame[i] ** 2;
+        rightEnergy += frame[i + lag] ** 2;
+      }
+      const denominator = Math.sqrt(leftEnergy * rightEnergy);
+      const correlation = denominator > EPSILON ? cross / denominator : 0;
+      if (correlation > bestCorrelation) { bestCorrelation = correlation; bestLag = lag; }
+    }
+    const accepted = bestLag !== null && bestCorrelation >= 0.6;
+    track.push({
+      time_seconds: Number(((start + frameSize / 2) / sampleRate).toFixed(3)),
+      f0_hz: accepted ? Number((sampleRate / bestLag).toFixed(2)) : null,
+      periodicity: Number(Math.max(0, bestCorrelation).toFixed(4)),
+      status: accepted ? 'candidate_periodic_f0' : 'unvoiced_or_uncertain',
+    });
+  }
+  return track;
+}
+
 function spectralFeatures(mono, sampleRate, frameSize) {
   const n = Math.min(frameSize, 2 ** Math.floor(Math.log2(mono.length)));
   if (n < 32) return { centroid_hz: null, rolloff_85_hz: null, flatness: null, low_mid_high_energy: null };
@@ -440,11 +483,13 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     spectral_recurrence_candidates: spectralNoveltyResult.recurrence_candidates,
     spectral_sequence_recurrence_candidates: spectralNoveltyResult.sequence_recurrence_candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
+    fundamental_frequency_track: estimateFundamentalFrequencyTrack(mono, sampleRate),
     stereo,
     limitations: [
       'Input must already be decoded to normalized PCM samples; file/container reading and decoding are not included.',
       'RMS/peak dBFS are not standards-compliant integrated loudness (LUFS) or true peak (dBTP).',
       'Spectral descriptors are estimates from finite windows and do not identify instruments or production techniques by themselves.',
+      'The fundamental-frequency track is autocorrelation-based and can follow instruments or harmonics; it is not a vocal detector, and octave errors or unvoiced segments are possible.',
       ...(channelSamples.length < 2 ? ['Stereo properties were not assessed because fewer than two channels were supplied.'] : []),
     ],
   };
