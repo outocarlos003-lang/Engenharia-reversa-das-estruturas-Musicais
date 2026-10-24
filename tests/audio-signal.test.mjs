@@ -94,6 +94,29 @@ test('estimates spectral novelty and recurring multi-window spectral sequences',
   assert.ok(result.spectral_sequence_recurrence_candidates.every(candidate => candidate.status === 'candidate_spectral_sequence_recurrence'));
 });
 
+test('cross-checks symbolic motif recurrence against acoustic sequence recurrence when time units are explicit', async () => {
+  const sampleRate = 8000;
+  const audio_samples = Array.from({ length: sampleRate * 12 }, (_, i) => {
+    const seconds = i / sampleRate;
+    const frequency = seconds < 3 || (seconds >= 6 && seconds < 9) ? 220 : 1200;
+    return 0.25 * Math.sin(2 * Math.PI * frequency * seconds);
+  });
+  const events = [
+    { onset: 0, duration: 0.25, midi: 60 },
+    { onset: 0.5, duration: 0.25, midi: 62 },
+    { onset: 1, duration: 0.25, midi: 64 },
+    { onset: 6, duration: 0.25, midi: 60 },
+    { onset: 6.5, duration: 0.25, midi: 62 },
+    { onset: 7, duration: 0.25, midi: 64 },
+  ];
+  const report = await analyzeMusicalSource(JSON.stringify({
+    events, time_unit: 'seconds', sample_rate_hz: sampleRate, audio_samples,
+  }));
+  assert.ok(Array.isArray(report.cross_modal_recurrence_candidates));
+  assert.ok(report.cross_modal_recurrence_candidates.length >= 1);
+  assert.ok(report.cross_modal_recurrence_candidates.every(candidate => candidate.status === 'candidate_cross_modal_recurrence'));
+});
+
 test('rejects invalid PCM input', () => {
   assert.throws(() => analyzeAudioSamples({ samples: [], sampleRate: 44100 }), /must not be empty/);
   assert.throws(() => analyzeAudioSamples({ samples: [0, NaN], sampleRate: 44100 }), /finite numbers/);
