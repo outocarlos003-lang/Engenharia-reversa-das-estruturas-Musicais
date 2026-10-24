@@ -24,7 +24,7 @@ function melodicRelation(base,candidate){
   if(same(a,b)){
     const offsets=candidate.map((v,i)=>v-base[i]);
     const offset=offsets.reduce((s,v)=>s+v,0)/offsets.length;
-    if(offsets.every(v=>close(v,offset,0.01))) return {type:close(offset,0.01)?'identity':'transposition',semitones:Number(offset.toFixed(4))};
+    if(offsets.every(v=>close(v,offset,0.01))) return {type:Math.abs(offset)<0.01?'identity':'transposition',semitones:Number(offset.toFixed(4))};
   }
   if(same(negate(a),b)) return {type:'inversion'};
   if(same(negate(reverse(a)),b)) return {type:'retrograde'};
