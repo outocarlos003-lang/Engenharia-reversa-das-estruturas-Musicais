@@ -94,10 +94,49 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
       ], { unit: 'Hz / proporção de energia / seconds', method: 'windowed FFT spectral descriptors and 1-second temporal summaries', evidence: ['audio_analysis.spectrum', 'audio_analysis.spectral_curve', 'audio_analysis.spectral_change_candidates', 'audio_analysis.spectral_novelty_curve', 'audio_analysis.spectral_novelty_candidates', 'audio_analysis.spectral_recurrence_candidates', 'audio_analysis.spectral_sequence_recurrence_candidates'], confidence: 0.75 });
       continue;
     }
+    if (id === 'mechanical_voice_analysis') {
+      const regions = source.vocal_regions ?? source.voice_regions ?? source.vocal_segments ?? null;
+      const validRegions = Array.isArray(regions) ? regions.filter(region =>
+        region && Number.isFinite(region.start_seconds) && Number.isFinite(region.end_seconds) &&
+        region.start_seconds >= 0 && region.end_seconds > region.start_seconds
+      ).map(region => ({
+        start_seconds: region.start_seconds,
+        end_seconds: region.end_seconds,
+        annotation: region.annotation ?? 'vocal_region',
+        confidence: Number.isFinite(region.confidence) ? Math.max(0, Math.min(1, region.confidence)) : null,
+        source: region.source ?? 'source annotation',
+      })) : [];
+      if (validRegions.length && !(audio && Array.isArray(audio.fundamental_frequency_track) && audio.fundamental_frequency_track.length)) {
+        dims[id] = record(id, {
+          vocal_regions: validRegions,
+          vocal_source_confirmed: true,
+          confirmation_method: 'explicit source annotation',
+          voice_specific_analysis: null,
+        }, 'observed', [
+          'Os intervalos vocais foram fornecidos como anotação de origem; o motor não detectou nem validou automaticamente a presença de voz.',
+          'Regiões anotadas não fornecem, por si só, F0, formantes, técnica vocal ou identidade da fonte.',
+        ], { unit: 'seconds', method: 'explicit vocal-region annotation', evidence: ['source.vocal_regions / source.voice_regions / source.vocal_segments'], confidence: null });
+        continue;
+      }
+    }
+
     if (audio && id === 'mechanical_voice_analysis' && Array.isArray(audio.fundamental_frequency_track) && audio.fundamental_frequency_track.length) {
+      const regions = source.vocal_regions ?? source.voice_regions ?? source.vocal_segments ?? null;
+      const validRegions = Array.isArray(regions) ? regions.filter(region =>
+        region && Number.isFinite(region.start_seconds) && Number.isFinite(region.end_seconds) &&
+        region.start_seconds >= 0 && region.end_seconds > region.start_seconds
+      ).map(region => ({
+        start_seconds: region.start_seconds,
+        end_seconds: region.end_seconds,
+        annotation: region.annotation ?? 'vocal_region',
+        confidence: Number.isFinite(region.confidence) ? Math.max(0, Math.min(1, region.confidence)) : null,
+        source: region.source ?? 'source annotation',
+      })) : [];
       dims[id] = record(id, {
         acoustic_f0_track: audio.fundamental_frequency_track,
-        vocal_source_confirmed: false,
+        vocal_regions: validRegions,
+        vocal_source_confirmed: validRegions.length > 0,
+        vocal_region_confirmation_method: validRegions.length ? 'explicit source annotation' : null,
         voice_specific_analysis: null,
       }, 'inferred', [
         'A trilha de F0 é uma estimativa de periodicidade acústica e não confirma que a fonte seja voz humana; instrumentos monofônicos também podem produzir candidatos semelhantes.',
