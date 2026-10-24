@@ -149,3 +149,10 @@ O motor estrutural foi adicionado como módulo independente e possui testes de u
 
 
 **Nenhuma música fornecida em conversas anteriores é usada como fixture ou teste deste projeto.**
+
+
+### Medições acústicas disponíveis no adaptador WAV
+
+O adaptador WAV calcula RMS por janela, loudness aproximado em dBFS, pico em dBFS e descritores espectrais por janela (centroide, largura de banda, rolloff de 85% e flatness). O perfil agrega os descritores espectrais das janelas analisadas. Esses valores são medições do sinal decodificado, não rótulos de emoção, gênero ou qualidade de produção.
+
+**Importante:** dBFS não é loudness integrado em LUFS conforme ITU-R BS.1770; o espectro usa uma janela curta de 256 pontos e serve como descrição aproximada. A análise estéreo ainda não calcula largura estéreo nem correlação entre canais. O perfil deixa esses dados indisponíveis quando não são fornecidos por outra fonte.
