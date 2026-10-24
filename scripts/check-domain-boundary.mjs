@@ -26,6 +26,8 @@ const blocked = [
   [102, 111, 114, 109, 97, 116],
   [97, 114, 116, 105, 102, 97, 99, 116],
   [101, 120, 116, 101, 110, 115, 105, 111, 110],
+  [109, 101, 116, 97, 100, 97, 100, 111, 115],
+  [102, 111, 114, 109, 97, 116, 111],
 ].map(codepoints => String.fromCharCode(...codepoints));
 
 const paths = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' })
