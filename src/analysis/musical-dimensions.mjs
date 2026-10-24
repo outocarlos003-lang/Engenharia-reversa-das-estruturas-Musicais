@@ -65,6 +65,13 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
     }
 
     const audio = source.audio_analysis;
+    if (audio && id === 'key' && audio.tonal_center && audio.tonal_center.tonic) {
+      const tonal = audio.tonal_center;
+      dims[id] = record(id, tonal, 'inferred', tonal.limitations ?? [
+        'Tonalidade candidata estimada por correlação de perfil cromático; não equivale a análise harmônica validada.',
+      ], { method: tonal.method, evidence: ['audio_analysis.tonal_center.chroma'], confidence: tonal.confidence });
+      continue;
+    }
     if (audio && id === 'loudness') {
       dims[id] = record(id, { peak_dbfs: audio.peak_dbfs, rms_dbfs: audio.rms_dbfs, crest_factor_db: audio.crest_factor_db }, 'observed', [
         'Medição de pico e RMS em dBFS; não equivale a loudness integrado em LUFS nem a true peak em dBTP.',
