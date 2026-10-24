@@ -100,7 +100,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
   }
   const maxPhraseEvents=Math.max(2,Number(options.maxPhraseEvents??16));
   const sortedIOIs=events.slice(1).map((e,i)=>e.onset-events[i].onset).filter(v=>v>0).sort((a,b)=>a-b);
-  const medianIOI=sortedIOIs.length?sortedIOIs[Math.floor(sortedIOIs.length/2)]:null;
+  const medianIOI=sortedIOIs.length?sortedIOIs[Math.floor((sortedIOIs.length-1)/2)]:null;
   const gapRatio=Math.max(1.25,Number(options.phraseBoundaryGapRatio??2.5));
   const minGap=Math.max(0,Number(options.phraseBoundaryMinGap??0.75));
   const chunks=[];
