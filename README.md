@@ -158,4 +158,4 @@ A análise da obra deve combinar atributos perceptivos, contextuais, musicais e 
 5. **Registrar incerteza:** tonalidade ambígua, andamento em meio-tempo/dobro-tempo e estimativas estéreo dependentes do arranjo devem permanecer explicitamente incertos.
 6. **Analisar por seção e globalmente:** preservar tanto o resumo da obra quanto a evolução temporal de cada parâmetro.
 
-A especificação detalhada, incluindo definições operacionais e exemplos de evidência, está em [docs/dimensoes-de-analise-musical.md](docs/dimensoes-de-analise-musical.md).
+A especificação detalhada, incluindo definições operacionais e exemplos de evidência, está em [docs/dimensoes-de-analise-musical.md](docs/dimensoes-de-analise-musical.md). O contrato JSON Schema para registros dessas dimensões está em [schemas/musical-dimensions.schema.json](schemas/musical-dimensions.schema.json).
