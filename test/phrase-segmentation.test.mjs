@@ -152,3 +152,25 @@ test('does not equate a lowercase minor v with an uppercase dominant V',()=>{
   const result=inferMusicalStructure(events);
   assert.ok(!result.phrases[1].evidence.basis.some(item=>item.type==='annotated_harmonic_cadence'));
 });
+
+test('recognizes a candidate V-I relation from supplied chord symbols and tonic',()=>{
+  const events=[
+    {id:'a',start:0,duration:1,pitch:60,chord_symbol:'C',key_tonic:'C'},
+    {id:'b',start:1,duration:1,pitch:67,chord_symbol:'G7',key_tonic:'C'},
+    {id:'c',start:2,duration:1,pitch:60,chord_symbol:'C',key_tonic:'C'},
+    {id:'d',start:5,duration:1,pitch:62,key_tonic:'C'},
+  ];
+  const result=inferMusicalStructure(events,{phraseBoundaryMinGap:0.5,phraseBoundaryGapRatio:1.25,maxPhraseEvents:16});
+  const boundary=result.phrases[1].evidence;
+  assert.ok(boundary.basis.some(item=>item.type==='chord_symbol_cadence'&&item.classification==='dominant_to_tonic'&&item.progression[0]==='G7'&&item.progression[1]==='C'));
+});
+
+test('does not infer a chord-symbol cadence without a supplied tonic',()=>{
+  const events=[
+    {id:'a',start:0,duration:1,chord_symbol:'G7'},
+    {id:'b',start:1,duration:1,chord_symbol:'C',phrase_end:true},
+    {id:'c',start:2,duration:1},
+  ];
+  const result=inferMusicalStructure(events);
+  assert.ok(!result.phrases[1].evidence.basis.some(item=>item.type==='chord_symbol_cadence'));
+});
