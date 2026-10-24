@@ -96,7 +96,7 @@ O ERM pode enviar referências estruturais explícitas para uma instância próp
 ### Capacidades integradas
 
 - Converte dados fornecidos de andamento, métrica, centro tonal, sequência de seções e progressão harmônica em um pedido de **Custom Mode**.
-- Expõe um cliente HTTP para geração simples, geração customizada, geração de letras, consulta de faixas, consulta de quota e extensão de áudio.
+- Expõe um cliente HTTP para geração simples, geração customizada, geração de letras, consulta de faixas, consulta de quota e extensão de áudio.\n- Inclui `waitForAudio(ids, { intervalMs, timeoutMs })` para consultar o estado de geração assíncrona, retornar os registros prontos e falhar em erros terminais ou timeout.
 - Mantém os fatos musicais ausentes como não especificados; não inventa tonalidade, acordes ou seções.
 - Não faz chamadas de rede durante a análise musical normal.
 
