@@ -20,7 +20,7 @@ Um sistema de engenharia reversa musical inspirado na arquitetura conceitual do 
 
 Informações como extensão do arquivo, contêiner, codec, taxa de amostragem, profundidade de bits, tamanho em bytes e outros metadados técnicos podem ser úteis para ingestão ou reprodução, mas **não são elementos da construção de uma composição**.
 
-Por isso, o ERM não mantém adaptadores de WAV/RIFF ou equivalentes como parte do núcleo de engenharia reversa musical. A fronteira de entrada deve converter uma fonte sonora em representação musical relevante; depois disso, a investigação trabalha sobre a estrutura musical.
+Por isso, decodificadores de WAV/RIFF ficam isolados na fronteira de ingestão, fora do núcleo composicional. O adaptador WAV inicial mede energia em janelas e propõe candidatos a ataques; não é transcrição polifônica e não afirma detectar notas, tonalidade ou instrumentos. Depois da ingestão, a investigação trabalha sobre a representação musical e registra as limitações do sinal extraído.
 
 ## Equivalência conceitual com REA
 
