@@ -133,3 +133,15 @@ test('integrates supplied PCM sample arrays into canonical acoustic dimensions',
   assert.equal(report.musical_dimensions.key.status, 'inferred');
   assert.match(report.musical_dimensions.loudness.limitations[0], /LUFS/);
 });
+
+test('estimates a cautious fundamental-frequency track without claiming it is vocal', () => {
+  const sampleRate = 8000;
+  const frequency = 220;
+  const samples = Array.from({ length: sampleRate }, (_, i) => 0.5 * Math.sin(2 * Math.PI * frequency * i / sampleRate));
+  const result = analyzeAudioSamples({ samples, sampleRate, frameSize: 1024 });
+  const periodic = result.fundamental_frequency_track.filter(frame => frame.f0_hz !== null);
+  assert.ok(periodic.length > 20);
+  assert.ok(periodic.every(frame => Math.abs(frame.f0_hz - frequency) < 15));
+  assert.ok(periodic.every(frame => frame.status === 'candidate_periodic_f0'));
+  assert.match(result.limitations.at(-1), /not a vocal detector/);
+});
