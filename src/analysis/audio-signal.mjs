@@ -306,7 +306,30 @@ function estimateFundamentalFrequencyTrack(mono, sampleRate) {
       status: accepted ? 'candidate_periodic_f0' : 'unvoiced_or_uncertain',
     });
   }
-  return track;
+  // Correct only isolated octave jumps bracketed by stable neighboring estimates.
+  // Real octave leaps and uncertain frames are preserved.
+  const stabilized = track.map((frame, index) => {
+    if (frame.status !== 'candidate_periodic_f0' || index === 0 || index === track.length - 1) return frame;
+    const previous = track[index - 1], next = track[index + 1];
+    if (previous.status !== 'candidate_periodic_f0' || next.status !== 'candidate_periodic_f0') return frame;
+    const neighborDistance = Math.abs(12 * Math.log2(previous.f0_hz / next.f0_hz));
+    if (neighborDistance > 1) return frame;
+    const neighborMedian = Math.sqrt(previous.f0_hz * next.f0_hz);
+    const octaveAlternatives = [frame.f0_hz / 2, frame.f0_hz * 2];
+    const corrected = octaveAlternatives.find(value =>
+      value >= minFrequency && value <= maxFrequency &&
+      Math.abs(12 * Math.log2(value / neighborMedian)) <= 1
+    );
+    if (corrected === undefined || Math.abs(12 * Math.log2(frame.f0_hz / neighborMedian)) <= 1) return frame;
+    return {
+      ...frame,
+      raw_f0_hz: frame.f0_hz,
+      f0_hz: Number(corrected.toFixed(2)),
+      status: 'candidate_periodic_f0_octave_corrected',
+      stabilization: 'isolated octave jump corrected against two stable adjacent frames',
+    };
+  });
+  return stabilized;
 }
 
 function summarizeVocalRegions(mono, sampleRate, regions, f0Track) {
@@ -377,7 +400,7 @@ function summarizeVocalRegions(mono, sampleRate, regions, f0Track) {
       limitations: [
         'Features are computed only because an input annotation marked this interval; they do not validate that the source is vocal.',
         'RMS and zero-crossing rate are generic acoustic descriptors, not voice-specific measures.',
-        'F0 summaries include only candidate periodic frames and may track instruments, harmonics, or octave errors; the observed range is not a singer tessitura estimate.',
+        'F0 summaries include candidate periodic frames, including conservatively corrected isolated octave jumps, and may track instruments or remaining octave errors; the observed range is not a singer tessitura estimate.',
         'Formants, phonation type, and vocal technique are not estimated.',
       ],
     };
