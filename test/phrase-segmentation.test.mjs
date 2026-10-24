@@ -61,3 +61,21 @@ test('records an end-of-source boundary as unresolved rather than claiming a cad
   assert.equal(result.phrases[0].boundary_status,'provisional');
   assert.equal(result.phrases[0].evidence.classification,'insufficient');
 });
+
+test('uses recurrence at a motif transition as supporting evidence without treating it as proof',()=>{
+  const events=[
+    {id:'a1',start:0,duration:1,pitch:60},
+    {id:'a2',start:1,duration:1,pitch:62},
+    {id:'a3',start:2,duration:1,pitch:64},
+    {id:'b1',start:6,duration:1,pitch:60},
+    {id:'b2',start:7,duration:1,pitch:62},
+    {id:'b3',start:8,duration:1,pitch:64},
+  ];
+  const result=inferMusicalStructure(events,{maxPhraseEvents:16,phraseBoundaryMinGap:0.75,phraseBoundaryGapRatio:2.5,motifs:{minLength:3,maxLength:3}});
+  assert.equal(result.phrases.length,2);
+  const boundary=result.phrases[1].evidence;
+  assert.ok(boundary.evidence.some(item=>item.type==='recurring_motif_boundary'));
+  assert.ok(boundary.evidence.some(item=>item.type==='inter_event_rest'));
+  assert.ok(boundary.score>=0.75);
+  assert.ok(result.motifs.some(motif=>motif.recurrence>=2));
+});
