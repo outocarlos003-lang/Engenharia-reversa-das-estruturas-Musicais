@@ -339,9 +339,24 @@ function summarizeVocalRegions(mono, sampleRate, regions, f0Track) {
       frame.time_seconds >= region.start_seconds && frame.time_seconds < region.end_seconds &&
       Number.isFinite(frame.f0_hz) && frame.status === 'candidate_periodic_f0'
     ).map(frame => frame.f0_hz).sort((a, b) => a - b);
-    const medianF0 = regionF0.length
-      ? Number(regionF0[Math.floor(regionF0.length / 2)].toFixed(2))
+    const quantile = (sorted, fraction) => {
+      if (!sorted.length) return null;
+      const position = (sorted.length - 1) * fraction;
+      const lower = Math.floor(position), upper = Math.ceil(position);
+      const value = sorted[lower] + (sorted[upper] - sorted[lower]) * (position - lower);
+      return Number(value.toFixed(2));
+    };
+    const medianF0 = quantile(regionF0, 0.5);
+    const f0Q1 = quantile(regionF0, 0.25);
+    const f0Q3 = quantile(regionF0, 0.75);
+    const f0Min = regionF0.length ? Number(regionF0[0].toFixed(2)) : null;
+    const f0Max = regionF0.length ? Number(regionF0.at(-1).toFixed(2)) : null;
+    const observedSemitoneSpan = regionF0.length && f0Min > 0
+      ? Number((12 * Math.log2(f0Max / f0Min)).toFixed(2))
       : null;
+    const framesInRegion = f0Track.filter(frame =>
+      frame.time_seconds >= region.start_seconds && frame.time_seconds < region.end_seconds
+    ).length;
     return {
       region_index: index,
       start_seconds: region.start_seconds,
@@ -353,13 +368,16 @@ function summarizeVocalRegions(mono, sampleRate, regions, f0Track) {
       rms_dbfs: dbfs(Math.sqrt(squareMean)),
       zero_crossing_rate: Number((crossings / (samples.length - 1)).toFixed(6)),
       f0_summary_hz: medianF0,
+      f0_candidate_range_hz: regionF0.length ? { min: f0Min, q1: f0Q1, median: medianF0, q3: f0Q3, max: f0Max } : null,
+      f0_observed_span_semitones: observedSemitoneSpan,
       f0_candidate_frame_count: regionF0.length,
+      f0_candidate_frame_coverage: Number((regionF0.length / Math.max(1, framesInRegion)).toFixed(4)),
       status: 'acoustic_summary_for_annotated_region',
-      method: 'RMS, zero-crossing rate, and median of candidate autocorrelation F0 frames within annotated interval',
+      method: 'RMS, zero-crossing rate, and robust quantiles/range of candidate autocorrelation F0 frames within annotated interval',
       limitations: [
         'Features are computed only because an input annotation marked this interval; they do not validate that the source is vocal.',
         'RMS and zero-crossing rate are generic acoustic descriptors, not voice-specific measures.',
-        'F0 summary includes only candidate periodic frames and may track instruments, harmonics, or octave errors.',
+        'F0 summaries include only candidate periodic frames and may track instruments, harmonics, or octave errors; the observed range is not a singer tessitura estimate.',
         'Formants, phonation type, and vocal technique are not estimated.',
       ],
     };
