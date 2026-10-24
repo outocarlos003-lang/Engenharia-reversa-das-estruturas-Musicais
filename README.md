@@ -8,7 +8,7 @@ Um sistema de engenharia reversa musical inspirado na arquitetura conceitual do 
 
 ## Princípios
 
-- **Composition first:** o objeto central é a construção musical, não o formato do arquivo que transporta o áudio.
+- **Composition first:** o objeto central é a construção musical e suas relações internas.
 - **Evidence first:** toda conclusão aponta para relações musicais observáveis, medições pertinentes ou comparações que a sustentem.
 - **Observed ≠ inferred ≠ interpreted:** observações, inferências analíticas e interpretações estéticas ficam explicitamente separadas.
 - **Hierarquia:** material musical → eventos → motivos → frases → seções → forma → obra.
@@ -111,7 +111,7 @@ O motor aceita eventos com start ou onset, duration e pitch ou midi. O tempo dev
 
 ## Estado atual e limitações
 
-O motor estrutural foi adicionado como módulo independente e possui testes de unidade preparados. Ainda é necessário integrá-lo ao fluxo principal do analisador, conectar as ferramentas MCP/CLI a resultados estruturais reais e executar a suíte completa no CI. Portanto, a presença do módulo não significa que toda a pipeline do ERM já esteja operacional.
+O motor estrutural está integrado ao analisador e às ferramentas MCP/CLI. Uma verificação automatizada de fronteira bloqueia regressões que tentem introduzir conceitos técnicos alheios à representação composicional. A suíte completa ainda exige estabilização: o CI continua apontando falhas em segmentação frasal e em alguns módulos auxiliares.
 
 
 
