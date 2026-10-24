@@ -2,7 +2,7 @@ import readline from 'node:readline';
 import { catalog } from './tools.mjs';
 import { runMusicalTool } from '../analysis/analyzer.mjs';
 
-const definitions = catalog().map(tool => ({ name: tool.name, description: `Evidence-first musical analysis: ${tool.name}. Input is a JSON musical representation or a path to one. Raw audio decoding is not implemented yet.`, inputSchema: { type: 'object', properties: { target: { type: 'string' }, options: { type: 'object', additionalProperties: true } }, required: ['target'] } }));
+const definitions = catalog().map(tool => ({ name: tool.name, description: `Evidence-first musical analysis: ${tool.name}. Input is a JSON musical representation or a path to one.`, inputSchema: { type: 'object', properties: { target: { type: 'string' }, options: { type: 'object', additionalProperties: true } }, required: ['target'] } }));
 const reply = (id, result) => process.stdout.write(`${JSON.stringify({ jsonrpc: '2.0', id, result })}\n`);
 const error = (id, code, message) => process.stdout.write(`${JSON.stringify({ jsonrpc: '2.0', id, error: { code, message } })}\n`);
 const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
