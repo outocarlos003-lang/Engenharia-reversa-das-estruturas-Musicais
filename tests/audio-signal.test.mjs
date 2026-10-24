@@ -24,6 +24,21 @@ test('measures stereo correlation and keeps audio properties distinct from LUFS'
   assert.match(result.limitations[1], /not standards-compliant integrated loudness/);
 });
 
+test('returns an explicitly heuristic tonal-center candidate from harmonic PCM', () => {
+  const sampleRate = 8000;
+  const duration = 2;
+  const frequencies = [261.63, 329.63, 392.00]; // C major triad
+  const samples = Array.from({ length: sampleRate * duration }, (_, i) =>
+    frequencies.reduce((sum, frequency) => sum + Math.sin(2 * Math.PI * frequency * i / sampleRate), 0) / frequencies.length
+  );
+  const result = analyzeAudioSamples({ samples, sampleRate, frameSize: 2048 });
+  assert.ok(result.tonal_center);
+  assert.ok(['candidate', 'ambiguous', 'insufficient_evidence'].includes(result.tonal_center.status));
+  assert.equal(result.tonal_center.method, 'Krumhansl-Schmuckler chroma profile correlation from windowed FFT');
+  assert.ok(result.tonal_center.chroma === null || Object.keys(result.tonal_center.chroma).length === 12);
+  assert.ok(result.tonal_center.confidence === null || (result.tonal_center.confidence >= 0 && result.tonal_center.confidence <= 1));
+});
+
 test('rejects invalid PCM input', () => {
   assert.throws(() => analyzeAudioSamples({ samples: [], sampleRate: 44100 }), /must not be empty/);
   assert.throws(() => analyzeAudioSamples({ samples: [0, NaN], sampleRate: 44100 }), /finite numbers/);
@@ -37,5 +52,6 @@ test('integrates supplied PCM sample arrays into canonical acoustic dimensions',
   assert.equal(report.musical_dimensions.loudness.status, 'observed');
   assert.equal(report.musical_dimensions.energy_structure.status, 'observed');
   assert.equal(report.musical_dimensions.spectrum.status, 'observed');
+  assert.equal(report.musical_dimensions.key.status, 'inferred');
   assert.match(report.musical_dimensions.loudness.limitations[0], /LUFS/);
 });
