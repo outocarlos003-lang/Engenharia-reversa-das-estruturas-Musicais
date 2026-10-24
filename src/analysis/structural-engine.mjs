@@ -134,6 +134,24 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       score=Math.min(1,score+0.15);
       evidence.push({type:'metrical_accent',weight:0.15,observed:true,value:Number(metricValue)});
     }
+    const previousIndex=previous?events.indexOf(previous):-1;
+    const priorHarmonicEvent=previousIndex>0?events[previousIndex-1]:null;
+    const harmonicLabel=sourceEvent=>{
+      const raw=sourceEvent?.roman_numeral??sourceEvent?.harmonic_function??sourceEvent?.chord_function??sourceEvent?.harmony_function;
+      return raw==null?null:String(raw).toLowerCase().replace(/[\\s₇₆⁷]/g,'').replace(/°/g,'dim').replace(/ø/g,'halfdim');
+    };
+    const priorFunction=harmonicLabel(priorHarmonicEvent);
+    const terminalFunction=harmonicLabel(previous);
+    const cadencePairs=[
+      {from:/^(v|v7|v9|v11|v13|dominant)$/,to:/^(i|i6|i64|tonic|tonicmajor|tonicminor|i:maj|i:min)$/ ,label:'dominant_to_tonic'},
+      {from:/^(viidim|viidim7|viihalfdim7|leadingtone|leadingtoneseventh)$/,to:/^(i|i6|i64|tonic|tonicmajor|tonicminor|i:maj|i:min)$/,label:'leading_tone_to_tonic'},
+      {from:/^(iv|iv7|subdominant)$/,to:/^(i|tonic|tonicmajor|tonicminor)$/,label:'subdominant_to_tonic'},
+    ];
+    const cadence=cadencePairs.find(pair=>pair.from.test(priorFunction??'')&&pair.to.test(terminalFunction??''));
+    if(cadence){
+      score=Math.min(1,score+0.25);
+      evidence.push({type:'annotated_harmonic_cadence',weight:0.25,observed:true,source_supplied:true,progression:[priorFunction,terminalFunction],classification:cadence.label,interpretation:'recognized from source-supplied harmonic-function labels; not inferred from pitches alone'});
+    }
     const terminalValue=previous?.cadential_strength??previous?.phrase_terminal_strength??previous?.terminal_strength;
     if(finite(terminalValue)){
       const value=Math.max(0,Math.min(1,Number(terminalValue)));
@@ -229,6 +247,6 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       inferred:['relative interval patterns','motif recurrence','phrase-boundary assessments combining rests, duration, supplied metrical accents, recurring-motif context and descriptive melodic transitions','provisional section groupings','form sequence'],
       unresolved:['meter unless supplied or independently inferred','cadential phrase boundaries','harmonic function unless chord/voice evidence is supplied','instrumentation and style'],
     },
-    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical, recurring-motif and source-supplied cadential evidence; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
+    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical, recurring-motif and source-supplied cadential evidence, including recognized transitions between annotated harmonic functions; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
   };
 }
