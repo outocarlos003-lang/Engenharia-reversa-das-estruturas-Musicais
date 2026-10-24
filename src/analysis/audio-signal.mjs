@@ -213,14 +213,16 @@ function analyzeSpectralNovelty(curve) {
   const peaks = novelty.filter((point, i) => point.novelty >= 0.12
     && point.novelty >= (novelty[i - 1]?.novelty ?? -Infinity)
     && point.novelty >= (novelty[i + 1]?.novelty ?? -Infinity));
+  const stride = Math.max(1, Math.ceil(curve.length / 600));
+  const sampled = curve.map((point, index) => ({ point, vector: vectors[index], index })).filter(item => item.index % stride === 0);
   const repeats = [];
-  for (let i = 0; i < curve.length; i++) {
-    for (let j = i + 3; j < curve.length; j++) {
-      const similarity = cosine(vectors[i], vectors[j]);
+  for (let a = 0; a < sampled.length; a++) {
+    for (let b = a + 3; b < sampled.length; b++) {
+      const similarity = cosine(sampled[a].vector, sampled[b].vector);
       if (similarity < 0.98) continue;
       repeats.push({
-        first_window: { start_seconds: curve[i].start_seconds, end_seconds: curve[i].end_seconds },
-        second_window: { start_seconds: curve[j].start_seconds, end_seconds: curve[j].end_seconds },
+        first_window: { start_seconds: sampled[a].point.start_seconds, end_seconds: sampled[a].point.end_seconds },
+        second_window: { start_seconds: sampled[b].point.start_seconds, end_seconds: sampled[b].point.end_seconds },
         similarity: Number(similarity.toFixed(4)),
         status: 'candidate_spectral_recurrence',
         method: 'cosine similarity of 1-second spectral summary vectors; threshold >= 0.98',
@@ -228,10 +230,32 @@ function analyzeSpectralNovelty(curve) {
       });
     }
   }
+  const sequenceRecurrences = [];
+  const sequenceLength = 3;
+  for (let a = 0; a + sequenceLength <= sampled.length; a++) {
+    for (let b = a + sequenceLength * 2; b + sequenceLength <= sampled.length; b++) {
+      let totalSimilarity = 0;
+      for (let offset = 0; offset < sequenceLength; offset++) {
+        totalSimilarity += cosine(sampled[a + offset].vector, sampled[b + offset].vector);
+      }
+      const similarity = totalSimilarity / sequenceLength;
+      if (similarity < 0.97) continue;
+      sequenceRecurrences.push({
+        first_sequence: { start_seconds: sampled[a].point.start_seconds, end_seconds: sampled[a + sequenceLength - 1].point.end_seconds },
+        second_sequence: { start_seconds: sampled[b].point.start_seconds, end_seconds: sampled[b + sequenceLength - 1].point.end_seconds },
+        window_count: sequenceLength,
+        similarity: Number(similarity.toFixed(4)),
+        status: 'candidate_spectral_sequence_recurrence',
+        method: 'mean cosine similarity of three aligned spectral-summary windows; threshold >= 0.97',
+        limitations: ['A recurring sequence of spectral profiles is not proof of a repeated musical passage; pitch, rhythm, harmony and source separation are not modeled.'],
+      });
+    }
+  }
   return {
     novelty_curve: novelty,
     novelty_candidates: peaks.map(point => ({ ...point, status: 'candidate_spectral_novelty', method: 'local maximum of adjacent-window cosine distance; threshold >= 0.12' })),
     recurrence_candidates: repeats,
+    sequence_recurrence_candidates: sequenceRecurrences,
   };
 }
 
@@ -414,6 +438,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     spectral_novelty_curve: spectralNoveltyResult.novelty_curve,
     spectral_novelty_candidates: spectralNoveltyResult.novelty_candidates,
     spectral_recurrence_candidates: spectralNoveltyResult.recurrence_candidates,
+    spectral_sequence_recurrence_candidates: spectralNoveltyResult.sequence_recurrence_candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     stereo,
     limitations: [
