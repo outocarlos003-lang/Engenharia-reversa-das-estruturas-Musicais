@@ -3,14 +3,15 @@
   "$id": "erm://schemas/analysis.schema.json",
   "title": "ERM Analysis Report",
   "type": "object",
-  "required": ["schema_version", "target", "observations", "sections", "limitations"],
+  "required": ["schema_version", "target", "representation", "observations", "sections", "limitations"],
   "properties": {
     "schema_version": {"type": "string"},
     "target": {"type": "string"},
-    "artifact": {"type": ["object", "null"]},
+    "representation": {"$ref": "#/$defs/musicalRepresentation"},
     "observations": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
     "events": {"type": "array"},
     "motifs": {"type": "array"},
+    "phrases": {"type": "array"},
     "sections": {"type": "array"},
     "form": {"type": "array"},
     "genre": {"type": "array"},
@@ -20,6 +21,26 @@
     "limitations": {"type": "array", "items": {"type": "string"}}
   },
   "$defs": {
+    "musicalRepresentation": {
+      "type": "object",
+      "required": ["rhythm", "melody", "harmony", "events", "motifs", "phrases", "sections", "form"],
+      "properties": {
+        "meter": {},
+        "tempo": {},
+        "rhythm": {"type": "object"},
+        "melody": {"type": "object"},
+        "harmony": {"type": "object"},
+        "events": {"type": "array"},
+        "motifs": {"type": "array"},
+        "phrases": {"type": "array"},
+        "sections": {"type": "array"},
+        "form": {"type": "array"},
+        "instrumentation": {"type": "object"},
+        "dynamics": {"type": "object"},
+        "spatial": {"type": "object"},
+        "limitations": {"type": "array"}
+      }
+    },
     "evidence": {
       "type": "object",
       "required": ["id", "claim", "type", "confidence", "sources", "limitations"],
