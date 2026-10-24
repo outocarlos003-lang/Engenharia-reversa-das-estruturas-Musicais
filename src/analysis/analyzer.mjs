@@ -5,6 +5,7 @@ import { buildReconstructionSpec } from './reconstruction.mjs';
 import { analyzeWavFile } from '../audio/wav.mjs';
 import { inferMusicalStructure } from './structural-engine.mjs';
 import { analyzeMotifTransformations } from './transformations.mjs';
+import { contextualizeTransformations } from './structural-relations.mjs';
 
 const LIMITATIONS = [
   'Sem áudio bruto ou eventos simbólicos confiáveis, não é possível afirmar notas, harmonia ou forma.',
@@ -48,7 +49,7 @@ export async function analyzeMusicalSource(target, options={}) {
   const iois=events.slice(1).map((e,i)=>e.onset-events[i].onset).filter(v=>v>0);
   const bpm=source.tempo?.bpm??(median(iois)?Number((60/median(iois)).toFixed(3)):null);
   const structure=inferMusicalStructure(events,options);
-  const transformations=analyzeMotifTransformations(events,options.transformations);
+  const transformations=contextualizeTransformations(analyzeMotifTransformations(events,options.transformations),structure);
   const limitations=[...LIMITATIONS,...(source.limitations??[]),...structure.limitations];
   const observations=[
     evidence({id:'event-order',claim:'Ordered musical events supplied by the source',value:events.length,type:OBSERVATION_TYPES.MEASURED,sources:[String(source.source??target)]}),
