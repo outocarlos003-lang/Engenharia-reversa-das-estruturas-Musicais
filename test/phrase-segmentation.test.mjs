@@ -105,3 +105,26 @@ test('describes melodic motion at a boundary',()=>{
   assert.equal(result.phrases[1].evidence.melodic_transition,'leap');
   assert.ok(result.phrases[1].evidence.basis.some(item=>item.type==='melodic_transition'));
 });
+
+test('honors an explicit terminal marker on the preceding event',()=>{
+  const events=[
+    {id:'a',start:0,duration:1,pitch:60,phrase_end:true},
+    {id:'b',start:1,duration:1,pitch:62},
+  ];
+  const result=inferMusicalStructure(events);
+  assert.equal(result.phrases.length,2);
+  assert.equal(result.phrases[1].boundary_reason,'source_declared_boundary');
+  assert.ok(result.phrases[1].evidence.basis.some(item=>item.type==='source_marker'));
+});
+
+test('uses supplied cadential strength as supporting evidence, not as a fabricated harmonic inference',()=>{
+  const events=[
+    {id:'a',start:0,duration:1,pitch:60,cadential_strength:0.9},
+    {id:'b',start:1,duration:1,pitch:62},
+    {id:'c',start:2,duration:1,pitch:64},
+  ];
+  const result=inferMusicalStructure(events,{phraseBoundaryMinGap:10,phraseBoundaryGapRatio:10,maxPhraseEvents:16});
+  const boundary=result.phrases[1].evidence;
+  assert.ok(boundary.basis.some(item=>item.type==='source_cadential_strength'&&item.source_supplied===true));
+  assert.ok(boundary.score>=0.2);
+});
