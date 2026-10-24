@@ -94,6 +94,19 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
       ], { unit: 'Hz / proporção de energia / seconds', method: 'windowed FFT spectral descriptors and 1-second temporal summaries', evidence: ['audio_analysis.spectrum', 'audio_analysis.spectral_curve', 'audio_analysis.spectral_change_candidates', 'audio_analysis.spectral_novelty_curve', 'audio_analysis.spectral_novelty_candidates', 'audio_analysis.spectral_recurrence_candidates', 'audio_analysis.spectral_sequence_recurrence_candidates'], confidence: 0.75 });
       continue;
     }
+    if (audio && id === 'mechanical_voice_analysis' && Array.isArray(audio.fundamental_frequency_track) && audio.fundamental_frequency_track.length) {
+      dims[id] = record(id, {
+        acoustic_f0_track: audio.fundamental_frequency_track,
+        vocal_source_confirmed: false,
+        voice_specific_analysis: null,
+      }, 'inferred', [
+        'A trilha de F0 é uma estimativa de periodicidade acústica e não confirma que a fonte seja voz humana; instrumentos monofônicos também podem produzir candidatos semelhantes.',
+        'A autocorrelação pode apresentar erros de oitava e falhar em fala não sonora, respirações, ruído, polifonia ou áudio com reverberação.',
+        'Timbre vocal, formantes, mecanismo de fonação, identidade da fonte e técnica vocal não são inferidos por esta trilha.',
+      ], { unit: 'Hz / seconds', method: '40 ms autocorrelation frames with 10 ms hop; periodicity threshold 0.6', evidence: ['audio_analysis.fundamental_frequency_track'], confidence: null });
+      continue;
+    }
+
     if (audio && id === 'stereo' && hasValue(audio.stereo)) {
       dims[id] = record(id, audio.stereo, 'observed', [
         'Correlação e relação side/mid calculadas nos canais fornecidos; não substituem avaliação perceptiva de panorama ou compatibilidade mono.',
