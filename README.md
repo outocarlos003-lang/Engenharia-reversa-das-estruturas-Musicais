@@ -128,6 +128,8 @@ A análise produz pico e RMS em dBFS, fator de crista, curva RMS em janelas de 1
 
 A análise temporal também identifica **candidatos a transição de energia** comparando bins RMS de 1 segundo e sinalizando mudanças locais de pelo menos 5 dB, com separação mínima de 2 segundos entre candidatos. Cada resultado inclui tempo aproximado, diferença de nível, RMS antes/depois e confiança heurística. Isso não identifica verso, refrão, ponte ou fronteiras formais confirmadas: pausas, automação de volume, mudanças de arranjo e eventos acústicos podem causar falsos positivos. Os candidatos e a curva RMS alimentam a dimensão canônica `energy_structure` quando não há anotação explícita que tenha precedência.
 
+Também é calculada uma **curva espectral temporal** em resumos aproximados de 1 segundo, com centroide espectral e proporção de energia nas bandas baixa, média e alta. Variações locais de centroide de pelo menos 25% ou mudança de distribuição entre bandas de pelo menos 0,20 geram `spectral_change_candidates`. Esses candidatos são evidência acústica complementar, não confirmação de fronteira formal; a dimensão canônica `spectrum` passa a incluir o resumo global, a curva temporal e os candidatos de mudança.
+
 **Limites importantes:** dBFS de pico/RMS não são LUFS integrados nem true peak dBTP; descritores espectrais não identificam automaticamente instrumentos, gênero ou técnica de produção. A estimativa de tonalidade é apenas uma hipótese estatística, especialmente frágil em trechos curtos, percussivos, modais ou com modulações. Os dados devem ser decodificados previamente por quem os fornece; leitura de arquivos WAV está fora do escopo desta etapa.
 
 ## Estado atual e limitações
