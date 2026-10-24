@@ -171,6 +171,31 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       score=Math.min(1,score+0.25);
       evidence.push({type:'chord_symbol_cadence',weight:0.25,observed:true,source_supplied:true,progression:[priorChord.symbol,terminalChord.symbol],key_tonic:tonicRaw,classification:'dominant_to_tonic',interpretation:'candidate V–I/V–i relation from supplied chord symbols and tonic; not inferred from audio'});
     }
+    const pitchClasses=sourceEvent=>{
+      const raw=sourceEvent?.chord_pitches??sourceEvent?.chord_notes;
+      if(!Array.isArray(raw)||!raw.length||!raw.every(value=>finite(value))) return null;
+      return [...new Set(raw.map(value=>((Number(value)%12)+12)%12))].sort((a,b)=>a-b);
+    };
+    const priorChordPitches=pitchClasses(priorHarmonicEvent);
+    const terminalChordPitches=pitchClasses(previous);
+    if(priorChordPitches&&terminalChordPitches){
+      const commonTones=priorChordPitches.filter(value=>terminalChordPitches.includes(value));
+      const semitoneConnections=terminalChordPitches.filter(target=>priorChordPitches.some(source=>{
+        const distance=Math.abs(source-target);
+        return distance===1||distance===11;
+      }));
+      evidence.push({
+        type:'annotated_voice_leading',
+        weight:0,
+        observed:true,
+        source_supplied:true,
+        prior_pitch_classes:priorChordPitches,
+        terminal_pitch_classes:terminalChordPitches,
+        common_pitch_classes:commonTones,
+        semitone_connected_terminal_pitch_classes:semitoneConnections,
+        interpretation:'descriptive pitch-class overlap and semitone adjacency from supplied chord pitches; does not establish voice assignment or cadence by itself',
+      });
+    }
     const terminalValue=previous?.cadential_strength??previous?.phrase_terminal_strength??previous?.terminal_strength;
     if(finite(terminalValue)){
       const value=Math.max(0,Math.min(1,Number(terminalValue)));
@@ -266,6 +291,6 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       inferred:['relative interval patterns','motif recurrence','phrase-boundary assessments combining rests, duration, supplied metrical accents, recurring-motif context and descriptive melodic transitions','provisional section groupings','form sequence'],
       unresolved:['meter unless supplied or independently inferred','cadential phrase boundaries','harmonic function unless chord/voice evidence is supplied','instrumentation and style'],
     },
-    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical, recurring-motif and source-supplied cadential evidence, including transitions between annotated harmonic functions and chord-symbol/tonic relations; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence; chord-symbol cadence checks require chord labels and a supplied tonic.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
+    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical, recurring-motif and source-supplied cadential evidence, including transitions between annotated harmonic functions, chord-symbol/tonic relations and descriptive voice-leading evidence; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence; chord-symbol cadence checks require chord labels and a supplied tonic.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
   };
 }
