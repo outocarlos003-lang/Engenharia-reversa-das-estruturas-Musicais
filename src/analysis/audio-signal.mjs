@@ -102,6 +102,67 @@ function fftRealPower(frame) {
   return Array.from({ length: n / 2 + 1 }, (_, i) => real[i] ** 2 + imag[i] ** 2);
 }
 
+function spectralEvolution(mono, sampleRate, frameSize) {
+  const n = Math.min(frameSize, 2 ** Math.floor(Math.log2(mono.length)));
+  if (n < 32) return { curve: [], candidates: [] };
+  const hop = Math.max(1, Math.floor(n / 2));
+  const windowSeconds = 1;
+  const framesPerWindow = Math.max(1, Math.floor(sampleRate * windowSeconds / hop));
+  const frames = [];
+  for (let start = 0; start + n <= mono.length; start += hop) {
+    const frame = mono.slice(start, start + n);
+    const mean = frame.reduce((sum, value) => sum + value, 0) / n;
+    const windowed = frame.map((value, i) => (value - mean) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1))));
+    const power = fftRealPower(windowed);
+    const total = power.reduce((sum, value) => sum + value, 0);
+    if (total <= EPSILON) {
+      frames.push({ time_seconds: start / sampleRate, centroid_hz: null, bands: null });
+      continue;
+    }
+    let weighted = 0;
+    const bands = { low: 0, mid: 0, high: 0 };
+    power.forEach((value, bin) => {
+      const hz = bin * sampleRate / n;
+      weighted += hz * value;
+      bands[hz < 250 ? 'low' : hz < 4000 ? 'mid' : 'high'] += value;
+    });
+    frames.push({
+      time_seconds: start / sampleRate,
+      centroid_hz: weighted / total,
+      bands: Object.fromEntries(Object.entries(bands).map(([key, value]) => [key, value / total])),
+    });
+  }
+  const curve = [];
+  for (let start = 0; start < frames.length; start += framesPerWindow) {
+    const group = frames.slice(start, start + framesPerWindow).filter(frame => frame.centroid_hz !== null);
+    if (!group.length) continue;
+    const bands = { low: 0, mid: 0, high: 0 };
+    for (const frame of group) for (const key of Object.keys(bands)) bands[key] += frame.bands[key];
+    curve.push({
+      start_seconds: Number(frames[start].time_seconds.toFixed(3)),
+      end_seconds: Number(Math.min(mono.length / sampleRate, frames[Math.min(frames.length - 1, start + framesPerWindow - 1)].time_seconds + n / sampleRate).toFixed(3)),
+      centroid_hz: Number((group.reduce((sum, frame) => sum + frame.centroid_hz, 0) / group.length).toFixed(2)),
+      low_mid_high_energy: Object.fromEntries(Object.entries(bands).map(([key, value]) => [key, Number((value / group.length).toFixed(4))])),
+    });
+  }
+  const candidates = [];
+  for (let i = 1; i < curve.length; i++) {
+    const previous = curve[i - 1], current = curve[i];
+    const centroidChange = previous.centroid_hz > 0 ? (current.centroid_hz - previous.centroid_hz) / previous.centroid_hz : 0;
+    const bandChange = Object.keys(current.low_mid_high_energy).reduce((sum, key) => sum + Math.abs(current.low_mid_high_energy[key] - previous.low_mid_high_energy[key]), 0) / 2;
+    if (Math.abs(centroidChange) < 0.25 && bandChange < 0.2) continue;
+    candidates.push({
+      time_seconds: Number(((previous.end_seconds + current.start_seconds) / 2).toFixed(3)),
+      centroid_change_percent: Number((centroidChange * 100).toFixed(1)),
+      band_distribution_change: Number(bandChange.toFixed(3)),
+      status: 'candidate_spectral_transition',
+      method: 'adjacent 1-second spectral summaries; centroid change >=25% or band-distribution change >=0.20',
+      limitations: ['Spectral change may reflect a timbral event, instrument entry, transient or noise rather than a formal section boundary.'],
+    });
+  }
+  return { curve, candidates };
+}
+
 function spectralFeatures(mono, sampleRate, frameSize) {
   const n = Math.min(frameSize, 2 ** Math.floor(Math.log2(mono.length)));
   if (n < 32) return { centroid_hz: null, rolloff_85_hz: null, flatness: null, low_mid_high_energy: null };
@@ -240,7 +301,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     for (let i = start; i < end; i++) sum += mono[i] ** 2;
     energyCurve.push({ start_seconds: Number((start / sampleRate).toFixed(3)), end_seconds: Number((end / sampleRate).toFixed(3)), rms: Number(Math.sqrt(sum / (end - start)).toFixed(6)), rms_dbfs: dbfs(Math.sqrt(sum / (end - start))) });
   }
-  let stereo = null;
+  const spectralEvolutionResult = spectralEvolution(mono, sampleRate, frameSize);\n  let stereo = null;
   if (channelSamples.length >= 2) {
     const left = channelSamples[0], right = channelSamples[1];
     let cross = 0, leftPower = 0, rightPower = 0, sidePower = 0, midPower = 0;
@@ -270,7 +331,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     crest_factor_db: Number((dbfs(peak) - dbfs(rms)).toFixed(3)),
     energy_curve: energyCurve,
     section_candidates: detectEnergyTransitions(energyCurve),
-    spectrum: spectralFeatures(mono, sampleRate, frameSize),
+    spectrum: spectralFeatures(mono, sampleRate, frameSize),\n    spectral_curve: spectralEvolutionResult.curve,\n    spectral_change_candidates: spectralEvolutionResult.candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     stereo,
     limitations: [
