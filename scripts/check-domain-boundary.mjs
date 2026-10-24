@@ -38,6 +38,7 @@ for (const path of paths) {
   const bytes = readFileSync(path);
   if (bytes.includes(0)) continue;
   const content = bytes.toString('utf8');
+
   for (const term of blocked) {
     const expression = new RegExp('(?:^|[^a-z0-9])' + term + '(?:$|[^a-z0-9])', 'i');
     if (expression.test(content)) {
@@ -48,24 +49,7 @@ for (const path of paths) {
 }
 
 if (paths.some(path => path.startsWith('src/audio/'))) {
-  violations.push('src/audio/: audio-ingestion modules are outside the compositional core');
-}
-
-if (violations.length) {
-  process.stderr.write('Domain-boundary check failed:\n' + violations.join('\n') + '\n');
-  process.exitCode = 1;
-} else {
-  process.stdout.write('Domain-boundary check passed.\n');
-}    const expression = new RegExp('(?:^|[^a-z0-9])' + term + '(?:$|[^a-z0-9])', 'i');
-    if (expression.test(content)) {
-      violations.push(path + ': prohibited domain term detected');
-      break;
-    }
-  }
-}
-
-if (paths.some(path => path.startsWith('src/audio/'))) {
-  violations.push('src/audio/: audio-ingestion modules are outside the compositional core');
+  violations.push('src/audio/: ingestion modules are outside the compositional core');
 }
 
 if (violations.length) {
