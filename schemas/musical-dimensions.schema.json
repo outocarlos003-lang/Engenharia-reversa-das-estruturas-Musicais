@@ -52,7 +52,8 @@
     "loudness": { "$ref": "#/$defs/dimensionRecord" },
     "energy_structure": { "$ref": "#/$defs/dimensionRecord" },
     "spectrum": { "$ref": "#/$defs/dimensionRecord" },
-    "stereo": { "$ref": "#/$defs/dimensionRecord" }
+    "stereo": { "$ref": "#/$defs/dimensionRecord" },
+    "instrumental_sound_sources": { "$ref": "#/$defs/dimensionRecord" }
   },
   "$defs": {
     "dimensionRecord": {
