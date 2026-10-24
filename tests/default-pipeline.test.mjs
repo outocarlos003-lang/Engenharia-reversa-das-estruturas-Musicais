@@ -25,9 +25,13 @@ test('default pipeline executes the complete structural chain', async () => {
   assert.ok(Array.isArray(report.phrases));
   assert.ok(Array.isArray(report.sections));
   assert.ok(report.form);
-  assert.ok(Array.isArray(report.genre));
+  assert.ok(report.genre);
   assert.ok(report.aesthetics);
+  assert.ok(report.production);
   assert.ok(report.reconstruction);
+  assert.ok(report.reconstruction.semantics);
+  assert.ok(report.validation);
+  assert.equal(report.validation.valid, true);
 });
 
 test('default pipeline never introduces a file-format model layer', async () => {
