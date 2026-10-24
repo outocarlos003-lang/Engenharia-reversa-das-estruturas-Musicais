@@ -79,3 +79,17 @@ test('uses recurrence at a motif transition as supporting evidence without treat
   assert.ok(boundary.score>=0.75);
   assert.ok(result.motifs.some(motif=>motif.recurrence>=2));
 });
+
+test('describes melodic motion at a boundary without calling it a cadence',()=>{
+  const events=[
+    {id:'a',start:0,duration:0.5,pitch:60},
+    {id:'b',start:0.5,duration:0.5,pitch:61},
+    {id:'c',start:1,duration:0.5,pitch:62},
+    {id:'d',start:5,duration:0.5,pitch:64},
+  ];
+  const result=inferMusicalStructure(events,{phraseBoundaryMinGap:1,phraseBoundaryGapRatio:2,maxPhraseEvents:16});
+  const boundary=result.phrases[1].evidence;
+  assert.equal(boundary.melodic_transition,'leap');
+  assert.ok(boundary.evidence.some(item=>item.type==='melodic_transition'&&item.weight===0));
+  assert.ok(boundary.unresolved.some(item=>item.includes('Cadential and harmonic evidence')));
+});
