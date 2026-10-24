@@ -69,6 +69,10 @@ Descreve distribuição de energia no domínio da frequência e mudanças tímbr
 
 Descreve imagem espacial e diferenças entre canais. Quando disponíveis, use correlação entre L/R, diferença Mid/Side, largura estéreo, panorama por camada e compatibilidade mono. Registre se o sinal é mono, estéreo ou multicanal e se a análise é global ou por frequência/seção. Uma medida de largura não equivale necessariamente à largura percebida, e correlação baixa não significa automaticamente boa espacialidade.
 
+### 13. Instrumental / fontes sonoras
+
+Descreve se o material disponível indica conteúdo instrumental, vocal ou misto, e quais fontes sonoras/instrumentos estão documentados ou identificados. Registre separadamente a presença de voz (cantada, falada, coral ou backing vocals), as fontes instrumentais (por exemplo, bateria, baixo, guitarra, piano, sintetizadores e instrumentos acústicos) e a confiança de cada identificação. Diferencie metadados fornecidos, anotação humana e detecção automática. Não conclua que uma faixa é instrumental apenas porque não há metadados vocais; na ausência de evidência, mantenha a presença vocal como desconhecida. O espectro isolado não identifica com segurança instrumentos específicos.
+
 ## Campos comuns e validação
 
 Cada resultado deve, sempre que possível, conter:
