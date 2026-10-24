@@ -31,7 +31,7 @@ export function createDefaultPipeline() {
       events: representation => detectEvents(representation),
       motifs: representation => findMotifs(representation),
       phrases: (representation, events, motifs) => inferPhrases({ ...representation, events, motifs }),
-      sections: (representation, events, motifs, phrases) => segmentSections({ ...representation, events, motifs, phrases }),
+      sections: (representation, events, motifs, phrases) => segmentSections(representation, phrases),
       form: (representation, sections) => inferForm(sections),
       genre: () => ({
         candidates: [],
