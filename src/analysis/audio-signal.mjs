@@ -358,10 +358,30 @@ function summarizeVocalRegions(mono, sampleRate, regions, f0Track) {
     for (let i = 1; i < samples.length; i++) {
       if ((samples[i - 1] < 0 && samples[i] >= 0) || (samples[i - 1] >= 0 && samples[i] < 0)) crossings++;
     }
-    const regionF0 = f0Track.filter(frame =>
-      frame.time_seconds >= region.start_seconds && frame.time_seconds < region.end_seconds &&
-      Number.isFinite(frame.f0_hz) && frame.status === 'candidate_periodic_f0'
-    ).map(frame => frame.f0_hz).sort((a, b) => a - b);
+    const regionFrames = f0Track.filter(frame =>
+      frame.time_seconds >= region.start_seconds && frame.time_seconds < region.end_seconds
+    );
+    const acceptedStatuses = ['candidate_periodic_f0', 'candidate_periodic_f0_octave_corrected'];
+    const regionCandidates = regionFrames.filter(frame =>
+      Number.isFinite(frame.f0_hz) && acceptedStatuses.includes(frame.status)
+    );
+    const regionF0 = regionCandidates.map(frame => frame.f0_hz).sort((a, b) => a - b);
+    // Compare only immediately adjacent track frames; do not bridge uncertain gaps.
+    const adjacentVariations = [];
+    for (let i = 1; i < regionFrames.length; i++) {
+      const previous = regionFrames[i - 1], current = regionFrames[i];
+      if (!acceptedStatuses.includes(previous.status) || !acceptedStatuses.includes(current.status)) continue;
+      if (!Number.isFinite(previous.f0_hz) || !Number.isFinite(current.f0_hz)) continue;
+      adjacentVariations.push(Math.abs(12 * Math.log2(current.f0_hz / previous.f0_hz)));
+    }
+    adjacentVariations.sort((a, b) => a - b);
+    const variationQuantile = fraction => {
+      if (!adjacentVariations.length) return null;
+      const position = (adjacentVariations.length - 1) * fraction;
+      const lower = Math.floor(position), upper = Math.ceil(position);
+      return Number((adjacentVariations[lower] +
+        (adjacentVariations[upper] - adjacentVariations[lower]) * (position - lower)).toFixed(3));
+    };
     const quantile = (sorted, fraction) => {
       if (!sorted.length) return null;
       const position = (sorted.length - 1) * fraction;
@@ -377,9 +397,7 @@ function summarizeVocalRegions(mono, sampleRate, regions, f0Track) {
     const observedSemitoneSpan = regionF0.length && f0Min > 0
       ? Number((12 * Math.log2(f0Max / f0Min)).toFixed(2))
       : null;
-    const framesInRegion = f0Track.filter(frame =>
-      frame.time_seconds >= region.start_seconds && frame.time_seconds < region.end_seconds
-    ).length;
+    const framesInRegion = regionFrames.length;
     return {
       region_index: index,
       start_seconds: region.start_seconds,
@@ -395,12 +413,18 @@ function summarizeVocalRegions(mono, sampleRate, regions, f0Track) {
       f0_observed_span_semitones: observedSemitoneSpan,
       f0_candidate_frame_count: regionF0.length,
       f0_candidate_frame_coverage: Number((regionF0.length / Math.max(1, framesInRegion)).toFixed(4)),
+      f0_adjacent_variation_median_semitones: variationQuantile(0.5),
+      f0_adjacent_variation_p90_semitones: variationQuantile(0.9),
+      f0_adjacent_pairs_within_one_semitone_ratio: adjacentVariations.length
+        ? Number((adjacentVariations.filter(value => value <= 1).length / adjacentVariations.length).toFixed(4))
+        : null,
+      f0_adjacent_pair_count: adjacentVariations.length,
       status: 'acoustic_summary_for_annotated_region',
-      method: 'RMS, zero-crossing rate, and robust quantiles/range of candidate autocorrelation F0 frames within annotated interval',
+      method: 'RMS, zero-crossing rate, and robust F0 quantiles/range and adjacent-frame variation statistics within annotated interval',
       limitations: [
         'Features are computed only because an input annotation marked this interval; they do not validate that the source is vocal.',
         'RMS and zero-crossing rate are generic acoustic descriptors, not voice-specific measures.',
-        'F0 summaries include candidate periodic frames, including conservatively corrected isolated octave jumps, and may track instruments or remaining octave errors; the observed range is not a singer tessitura estimate.',
+        'F0 summaries include candidate periodic frames, including conservatively corrected isolated octave jumps, and may track instruments or remaining octave errors; the observed range is not a singer tessitura estimate.',\n        'Adjacent-frame variation describes estimator output, not proven vocal instability or vibrato; comparisons never bridge uncertain frames.',
         'Formants, phonation type, and vocal technique are not estimated.',
       ],
     };
