@@ -64,6 +64,32 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
       continue;
     }
 
+    const audio = source.audio_analysis;
+    if (audio && id === 'loudness') {
+      dims[id] = record(id, { peak_dbfs: audio.peak_dbfs, rms_dbfs: audio.rms_dbfs, crest_factor_db: audio.crest_factor_db }, 'observed', [
+        'Medição de pico e RMS em dBFS; não equivale a loudness integrado em LUFS nem a true peak em dBTP.',
+      ], { unit: 'dBFS', method: audio.method ?? 'normalized PCM sample analysis', evidence: ['audio_analysis.peak_dbfs', 'audio_analysis.rms_dbfs'], confidence: 0.98 });
+      continue;
+    }
+    if (audio && id === 'energy_structure') {
+      dims[id] = record(id, audio.energy_curve, 'observed', [
+        'Curva calculada por janelas de RMS; não inclui LUFS, detecção de transientes ou segmentação musical semântica.',
+      ], { unit: 'RMS / dBFS', method: 'RMS por janela de 100 ms sobre amostras PCM', evidence: ['audio_analysis.energy_curve'], confidence: 0.95 });
+      continue;
+    }
+    if (audio && id === 'spectrum' && hasValue(audio.spectrum)) {
+      dims[id] = record(id, audio.spectrum, 'observed', [
+        'Descritores espectrais estimados por FFT em janelas; não identificam instrumentos nem técnicas de produção por si sós.',
+      ], { unit: 'Hz / proporção de energia', method: 'windowed FFT spectral descriptors', evidence: ['audio_analysis.spectrum'], confidence: 0.85 });
+      continue;
+    }
+    if (audio && id === 'stereo' && hasValue(audio.stereo)) {
+      dims[id] = record(id, audio.stereo, 'observed', [
+        'Correlação e relação side/mid calculadas nos canais fornecidos; não substituem avaliação perceptiva de panorama ou compatibilidade mono.',
+      ], { unit: 'correlation / dB', method: 'L/R channel correlation and mid-side energy', evidence: ['audio_analysis.stereo'], confidence: 0.9 });
+      continue;
+    }
+
     if (id === 'tempo' && hasValue(representation.tempo?.bpm)) {
       dims[id] = record(id, representation.tempo.bpm, 'inferred', [
         'Estimated from symbolic event onsets or supplied tempo metadata; audio-based beat tracking was not performed.',
