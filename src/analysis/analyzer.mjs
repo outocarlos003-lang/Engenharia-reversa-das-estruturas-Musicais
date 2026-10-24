@@ -107,7 +107,7 @@ export async function analyzeMusicalSource(target, options={}) {
     dynamics:source.dynamics??{},instrumentation:source.instrumentation??{},spatial:source.spatial??{},limitations,
   });
   const audioAnalysis = source.audio_analysis ?? (source.audio_samples && source.sample_rate_hz
-    ? analyzeAudioSamples({samples:source.audio_samples,sampleRate:Number(source.sample_rate_hz),channels:Number(source.audio_channels??1)})
+    ? analyzeAudioSamples({samples:source.audio_samples,sampleRate:Number(source.sample_rate_hz),channels:Number(source.audio_channels??1),vocalRegions:source.vocal_regions??source.voice_regions??source.vocal_segments??[]})
     : null);
   const dimensionsSource = audioAnalysis ? {...source,audio_analysis:audioAnalysis} : source;
   const musicalDimensions=buildMusicalDimensions(dimensionsSource,representation);
