@@ -36,6 +36,12 @@ const paths = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' })
 const violations = [];
 
 for (const path of paths) {
+  for (const term of blocked) {
+    if (new RegExp('(?:^|[^a-z0-9])' + term + '(?:$|[^a-z0-9])', 'i').test(path)) {
+      violations.push(path + ': prohibited domain term in path');
+      break;
+    }
+  }
   if (!/\.(mjs|cjs|js|json|md|ya?ml|toml|txt)$/i.test(path)) continue;
   const bytes = readFileSync(path);
   if (bytes.includes(0)) continue;
