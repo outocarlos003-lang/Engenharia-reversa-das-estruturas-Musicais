@@ -98,6 +98,81 @@ function spectralFeatures(mono, sampleRate, frameSize) {
   };
 }
 
+const PITCH_CLASSES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const KEY_PROFILES = {
+  major: [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88],
+  minor: [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17],
+};
+
+function pearson(a, b) {
+  const meanA = a.reduce((s, v) => s + v, 0) / a.length;
+  const meanB = b.reduce((s, v) => s + v, 0) / b.length;
+  let numerator = 0, aa = 0, bb = 0;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i] - meanA, y = b[i] - meanB;
+    numerator += x * y;
+    aa += x * x;
+    bb += y * y;
+  }
+  return aa && bb ? numerator / Math.sqrt(aa * bb) : 0;
+}
+
+function estimateTonalCenter(mono, sampleRate, frameSize) {
+  const n = Math.min(frameSize, 2 ** Math.floor(Math.log2(mono.length)));
+  if (n < 128 || mono.length < sampleRate * 0.5) {
+    return { status: 'insufficient_evidence', tonic: null, mode: null, confidence: null, method: 'Krumhansl-Schmuckler chroma profile correlation', chroma: null };
+  }
+  const chroma = new Array(12).fill(0);
+  const hop = Math.max(1, Math.floor(n / 2));
+  let analyzedFrames = 0;
+  for (let start = 0; start + n <= mono.length; start += hop) {
+    const frame = mono.slice(start, start + n);
+    const mean = frame.reduce((s, v) => s + v, 0) / n;
+    const windowed = frame.map((value, i) => (value - mean) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1))));
+    const power = fftRealPower(windowed);
+    for (let bin = 1; bin < power.length; bin++) {
+      const hz = bin * sampleRate / n;
+      if (hz < 55 || hz > Math.min(2000, sampleRate / 2)) continue;
+      const midi = 69 + 12 * Math.log2(hz / 440);
+      const pitchClass = ((Math.round(midi) % 12) + 12) % 12;
+      const detuning = Math.abs(midi - Math.round(midi));
+      chroma[pitchClass] += power[bin] * Math.max(0, 1 - detuning);
+    }
+    analyzedFrames++;
+  }
+  const total = chroma.reduce((s, v) => s + v, 0);
+  if (!analyzedFrames || total <= EPSILON) {
+    return { status: 'insufficient_evidence', tonic: null, mode: null, confidence: null, method: 'Krumhansl-Schmuckler chroma profile correlation', chroma: null };
+  }
+  const normalized = chroma.map(v => v / total);
+  const candidates = [];
+  for (let tonic = 0; tonic < 12; tonic++) {
+    for (const mode of ['major', 'minor']) {
+      const profile = KEY_PROFILES[mode].map((_, i) => KEY_PROFILES[mode][(i - tonic + 12) % 12]);
+      candidates.push({ tonic, mode, score: pearson(normalized, profile) });
+    }
+  }
+  candidates.sort((a, b) => b.score - a.score);
+  const best = candidates[0], runnerUp = candidates[1];
+  const margin = Math.max(0, best.score - runnerUp.score);
+  const confidence = Math.max(0, Math.min(1, margin * 2.5));
+  return {
+    status: confidence >= 0.12 ? 'candidate' : 'ambiguous',
+    tonic: PITCH_CLASSES[best.tonic],
+    mode: best.mode,
+    confidence: Number(confidence.toFixed(3)),
+    profile_correlation: Number(best.score.toFixed(4)),
+    margin_to_runner_up: Number(margin.toFixed(4)),
+    method: 'Krumhansl-Schmuckler chroma profile correlation from windowed FFT',
+    chroma: Object.fromEntries(PITCH_CLASSES.map((name, i) => [name, Number(normalized[i].toFixed(5))])),
+    limitations: [
+      'Tonal center is a statistical candidate, not a verified score analysis.',
+      'Percussion, tuning deviation, modulation, modal music and short or harmonically sparse excerpts can mislead key estimation.',
+      'The confidence score is a heuristic margin between profile correlations, not a calibrated probability.',
+    ],
+  };
+}
+
 /**
  * Analyze already-decoded, normalized PCM samples. This function does not read
  * files or decode WAV/MP3/other containers. Samples should be floats in [-1, 1].
@@ -151,6 +226,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     crest_factor_db: Number((dbfs(peak) - dbfs(rms)).toFixed(3)),
     energy_curve: energyCurve,
     spectrum: spectralFeatures(mono, sampleRate, frameSize),
+    tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     stereo,
     limitations: [
       'Input must already be decoded to normalized PCM samples; file/container reading and decoding are not included.',
