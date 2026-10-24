@@ -89,11 +89,30 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     onset:onsetOf(event),duration:durationOf(event),midi:pitchOf(event),
   })).sort((a,b)=>a.onset-b.onset);
   const motifs=findStructuralMotifs(events,options.motifs);
-  const maxPhraseEvents=Math.max(2,Number(options.maxPhraseEvents??8));
+  const maxPhraseEvents=Math.max(2,Number(options.maxPhraseEvents??16));
+  const sortedIOIs=events.slice(1).map((e,i)=>e.onset-events[i].onset).filter(v=>v>0).sort((a,b)=>a-b);
+  const medianIOI=sortedIOIs.length?sortedIOIs[Math.floor(sortedIOIs.length/2)]:null;
+  const gapRatio=Math.max(1.25,Number(options.phraseBoundaryGapRatio??2.5));
+  const minGap=Math.max(0,Number(options.phraseBoundaryMinGap??0.75));
+  const chunks=[];
+  let current=[];
+  for(let i=0;i<events.length;i++){
+    const event=events[i];
+    const previous=events[i-1];
+    const gap=previous?event.onset-(previous.onset+previous.duration):0;
+    const largeGap=Boolean(previous&&gap>=Math.max(minGap,(medianIOI??minGap)*gapRatio));
+    const explicit=Boolean(event.phrase_boundary_before||event.phrase_start||event.cadence_boundary_before);
+    const declaredPhrase=Boolean(previous&&event.phrase_id!=null&&previous.phrase_id!=null&&event.phrase_id!==previous.phrase_id);
+    const capped=current.length>=maxPhraseEvents;
+    const boundary=current.length>0&&(largeGap||explicit||declaredPhrase||capped);
+    if(boundary){chunks.push({events:current,reason:largeGap?'inter_phrase_gap':explicit?'source_declared_boundary':declaredPhrase?'source_phrase_id_change':'safety_cap'});current=[];}
+    current.push(event);
+  }
+  if(current.length) chunks.push({events:current,reason:'end_of_source'});
   const phrases=[];
-  for(let i=0;i<events.length;i+=maxPhraseEvents){
-    const chunk=events.slice(i,i+maxPhraseEvents);
-    if(!chunk.length) continue;
+  for(let index=0;index<chunks.length;index++){
+    const {events:chunk,reason}=chunks[index];
+    const boundaryEvidence=reason==='inter_phrase_gap'?['inter-onset gap and preceding event duration compared with local median onset interval']:reason==='source_declared_boundary'||reason==='source_phrase_id_change'?['boundary explicitly represented in source events']:['maximum event count used as a safety cap'];
     phrases.push({
       id:`phrase-${phrases.length+1}`,start:chunk[0].onset,
       end:chunk.at(-1).onset+chunk.at(-1).duration,
@@ -101,9 +120,10 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       interval_signature:intervalSignature(chunk),
       contour:contour(intervalSignature(chunk)),
       motif_ids:motifs.filter(m=>m.occurrences.some(o=>o.event_ids.some(id=>chunk.some(e=>e.id===id)))).map(m=>m.id),
-      boundary_status:'provisional',
-      confidence:0.5,
-      evidence:{basis:['ordered event boundaries'],unresolved:['phrase boundary requires cadence, repetition, and/or score context']},
+      boundary_status:reason==='inter_phrase_gap'||reason==='source_declared_boundary'||reason==='source_phrase_id_change'?'inferred':'provisional',
+      boundary_reason:reason,
+      confidence:reason==='source_declared_boundary'||reason==='source_phrase_id_change'?0.9:reason==='inter_phrase_gap'?0.65:0.35,
+      evidence:{basis:boundaryEvidence,measured_gap_before:index>0?Number((chunk[0].onset-(chunks[index-1].events.at(-1).onset+chunks[index-1].events.at(-1).duration)).toFixed(6)):null,median_inter_onset_interval:medianIOI,unresolved:['cadential and harmonic evidence is not available unless supplied separately']},
     });
   }
   const sections=[];
@@ -141,9 +161,9 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     form:{sequence:form.map(x=>x.label),pattern:form.map(x=>x.label).join('-'),mapping:form,confidence:form.length?0.45:0},
     epistemic_status:{
       observed:['event order','onsets and durations when supplied','pitch values when supplied'],
-      inferred:['relative interval patterns','motif recurrence','provisional phrase and section groupings','form sequence'],
+      inferred:['relative interval patterns','motif recurrence','phrase boundaries from rhythmic gaps or source declarations','provisional section groupings','form sequence'],
       unresolved:['meter unless supplied or independently inferred','cadential phrase boundaries','harmonic function unless chord/voice evidence is supplied','instrumentation and style'],
     },
-    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
+    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Gap-based phrase segmentation can miss legato cadences and may split expressive pauses.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
   };
 }
