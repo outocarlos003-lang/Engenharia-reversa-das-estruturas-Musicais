@@ -207,7 +207,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     let melodicTransition='unavailable';
     if(previousPitch!==null&&previousPitch!==undefined&&currentPitch!==null){
       const interval=currentPitch-previousPitch;
-      melodicTransition=Math.abs(interval)<0.001?'repeated_pitch':Math.abs(interval)<=2?'stepwise_motion':'leap';
+      melodicTransition=Math.abs(interval)<0.001?'repeated_pitch':Math.abs(interval)<=1?'stepwise_motion':'leap';
       evidence.push({type:'melodic_transition',weight:0,observed:true,classification:melodicTransition,boundary_interval:interval,interpretation:'descriptive only; melodic motion does not establish cadence or phrase closure'});
     }
     const motifEnd=Boolean(previous&&recurringMotifEnds.has(previous.id));
@@ -256,7 +256,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       boundary_status:reason==='end_of_source'?'provisional':reason==='safety_cap'?'provisional':boundary?.classification==='supported'?'supported':boundary?.classification==='ambiguous'?'ambiguous':'provisional',
       boundary_reason:reason,
       confidence:reason==='end_of_source'?0.35:reason==='safety_cap'?0.25:boundary?.score??0.25,
-      evidence:{score:boundary?.score??0,classification:boundary?.classification??'insufficient',melodic_transition:boundary?.melodic_transition??'unavailable',basis:boundaryEvidence,measured_gap_before:index>0?Number((chunk[0].onset-(chunks[index-1].events.at(-1).onset+chunks[index-1].events.at(-1).duration)).toFixed(6)):null,median_inter_onset_interval:medianIOI,median_event_duration:medianDuration,unresolved:['Cadential and harmonic evidence is not inferred unless explicitly supplied; rhythmic and metric evidence remains heuristic.']},
+      evidence:{score:boundary?.score??0,classification:boundary?.classification??'insufficient',melodic_transition:boundary?.melodic_transition??'unavailable',basis:boundaryEvidence,evidence:boundaryEvidence,measured_gap_before:index>0?Number((chunk[0].onset-(chunks[index-1].events.at(-1).onset+chunks[index-1].events.at(-1).duration)).toFixed(6)):null,median_inter_onset_interval:medianIOI,median_event_duration:medianDuration,unresolved:['Cadential and harmonic evidence is not inferred unless explicitly supplied; rhythmic and metric evidence remains heuristic.']},
     });
   }
   const sections=[];
