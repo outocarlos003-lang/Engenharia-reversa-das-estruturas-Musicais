@@ -245,3 +245,24 @@ A análise da obra deve combinar atributos perceptivos, contextuais, musicais e 
 6. **Analisar por seção e globalmente:** preservar tanto o resumo da obra quanto a evolução temporal de cada parâmetro.
 
 A especificação detalhada, incluindo definições operacionais e exemplos de evidência, está em [docs/dimensoes-de-analise-musical.md](docs/dimensoes-de-analise-musical.md). O contrato JSON Schema para registros dessas dimensões está em [schemas/musical-dimensions.schema.json](schemas/musical-dimensions.schema.json). O analisador agora inclui `musical_dimensions` no relatório canônico e nas respostas MCP, com quatorze dimensões — incluindo `instrumental_sound_sources` e `mechanical_voice_analysis` — preservando dados ausentes como desconhecidos ou não avaliados. As dimensões só são inferidas quando há metadados ou evidência simbólica apropriada; loudness, espectro e outras medidas que exigem áudio bruto não são inventadas.
+
+
+### Análise acústica de áudio WAV
+
+O módulo `src/integrations/audio-wav.mjs` adiciona decodificação nativa, sem dependências, de WAV/RIFF PCM inteiro (8/16/24/32 bits) e IEEE float (32/64 bits), e encaminha as amostras normalizadas para `analyzeAudioSamples`. Para usar o adaptador diretamente no fluxo Suno:
+
+```js
+import { createWavAudioAnalyzer } from './src/integrations/audio-wav.mjs';
+import { runSunoReconstructionWorkflow } from './src/integrations/suno-workflow.mjs';
+
+const result = await runSunoReconstructionWorkflow({
+  report: ermReport,
+  options: { title: 'Study', style: 'cinematic ambient' },
+  analyzeGeneratedAudio: createWavAudioAnalyzer({
+    allowedHosts: ['host-confiavel.example'],
+    maxBytes: 64 * 1024 * 1024,
+  }),
+});
+```
+
+O adaptador aceita somente URL HTTPS direta, rejeita redirecionamentos, restringe hosts quando `allowedHosts` é fornecido e limita o tamanho baixado. O endpoint precisa fornecer WAV compatível; URLs MP3/AAC ou URLs que dependam de redirecionamento exigem outro decodificador/adaptador. A análise produz descritores acústicos e candidatos de transição, não uma transcrição musical completa nem prova de equivalência estrutural. O comparador `compareReports` continua sendo explícito e separado.
