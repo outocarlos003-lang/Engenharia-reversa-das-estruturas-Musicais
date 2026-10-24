@@ -24,6 +24,7 @@ export function decodeWav(buffer) {
   const bytes=bits/8, frameBytes=bytes*channels, frames=Math.floor(data.size/frameBytes);
   if(!frames) throw new Error('WAV contains no complete audio frames.');
   const mono=new Float32Array(frames);
+  const channelSamples=Array.from({length:channels},()=>new Float32Array(frames));
   for(let f=0;f<frames;f++) {
     let sum=0;
     for(let c=0;c<channels;c++) {
@@ -33,11 +34,13 @@ export function decodeWav(buffer) {
       else if(bits===16) v=buffer.readInt16LE(p)/32768;
       else if(bits===24) { let n=buffer[p]|(buffer[p+1]<<8)|(buffer[p+2]<<16); if(n&0x800000)n|=0xff000000; v=n/8388608; }
       else v=buffer.readInt32LE(p)/2147483648;
-      sum+=Number.isFinite(v)?Math.max(-1,Math.min(1,v)):0;
+      v=Number.isFinite(v)?Math.max(-1,Math.min(1,v)):0;
+      channelSamples[c][f]=v;
+      sum+=v;
     }
     mono[f]=sum/channels;
   }
-  return { samples:mono, sampleRate, channels, duration:frames/sampleRate, encoding:format===3?'ieee-float':'pcm', bitsPerSample:bits };
+  return { samples:mono, channelSamples, sampleRate, channels, duration:frames/sampleRate, encoding:format===3?'ieee-float':'pcm', bitsPerSample:bits };
 }
 
 export function estimatePitch(samples, sampleRate, {minHz=60,maxHz=1000,minConfidence=0.65}={}) {
@@ -70,6 +73,19 @@ export function estimatePitch(samples, sampleRate, {minHz=60,maxHz=1000,minConfi
   }
   const hz=rate/lag, midi=69+12*Math.log2(hz/440);
   return {frequency_hz:Number(hz.toFixed(2)),midi:Number(midi.toFixed(2)),confidence:Number(best.toFixed(4))};
+}
+
+
+function measureStereo(channelSamples) {
+  if(!channelSamples || channelSamples.length<2) return {status:'mono_or_unavailable',channel_count:channelSamples?.length??0,stereo_width:null,interchannel_correlation:null,left_right_rms_db:null};
+  const left=channelSamples[0], right=channelSamples[1], length=Math.min(left.length,right.length);
+  if(!length) return {status:'unavailable',channel_count:channelSamples.length,stereo_width:null,interchannel_correlation:null,left_right_rms_db:null};
+  let ll=0,rr=0,lr=0,diff=0,sum=0;
+  for(let i=0;i<length;i++){const l=left[i],r=right[i];ll+=l*l;rr+=r*r;lr+=l*r;diff+=(l-r)*(l-r);sum+=(l+r)*(l+r);}
+  const lRms=Math.sqrt(ll/length),rRms=Math.sqrt(rr/length);
+  const correlation=ll>1e-12&&rr>1e-12?Math.max(-1,Math.min(1,lr/Math.sqrt(ll*rr))):null;
+  const width=Math.sqrt(diff/Math.max(sum,1e-12));
+  return {status:'measured',channel_count:channelSamples.length,stereo_width:Number(width.toFixed(6)),interchannel_correlation:correlation===null?null:Number(correlation.toFixed(6)),left_right_rms_db:lRms>0&&rRms>0?Number((20*Math.log10(lRms/rRms)).toFixed(3)):null,method:'first two channels; normalized difference RMS and uncentered interchannel correlation'};
 }
 
 function spectralFeatures(samples, sampleRate) {
@@ -109,7 +125,7 @@ function spectralFeatures(samples, sampleRate) {
 }
 
 export function analyzeWavBuffer(buffer, {windowMs=50, hopMs=25}={}) {
-  const wav=decodeWav(buffer), {samples,sampleRate}=wav;
+  const wav=decodeWav(buffer), {samples,sampleRate,channelSamples}=wav;
   const window=Math.max(32,Math.round(sampleRate*windowMs/1000));
   const hop=Math.max(16,Math.round(sampleRate*hopMs/1000));
   const frames=[];
@@ -141,11 +157,12 @@ export function analyzeWavBuffer(buffer, {windowMs=50, hopMs=25}={}) {
     }
     previous=frame.rms;
   }
-  return { ...wav, frames:frames.length, events, dynamics:{rms_min:rms.length?Math.min(...rms):0,rms_median:median,rms_peak:peak,loudness_dbfs:Number.isFinite(loudnessDbfs)?Number(loudnessDbfs.toFixed(3)):null,peak_dbfs:peak>0?Number((20*Math.log10(peak)).toFixed(3)):null,window_ms:windowMs,hop_ms:hopMs}, spectrum:{centroid_hz:average('centroid_hz'),bandwidth_hz:average('bandwidth_hz'),rolloff_hz:average('rolloff_hz'),flatness:average('flatness'),method:'mean of frame-level magnitude-spectrum descriptors; 256-point window'}, limitations:[
+  return { ...wav, frames:frames.length, events, dynamics:{rms_min:rms.length?Math.min(...rms):0,rms_median:median,rms_peak:peak,loudness_dbfs:Number.isFinite(loudnessDbfs)?Number(loudnessDbfs.toFixed(3)):null,peak_dbfs:peak>0?Number((20*Math.log10(peak)).toFixed(3)):null,window_ms:windowMs,hop_ms:hopMs}, spectrum:{centroid_hz:average('centroid_hz'),bandwidth_hz:average('bandwidth_hz'),rolloff_hz:average('rolloff_hz'),flatness:average('flatness'),method:'mean of frame-level magnitude-spectrum descriptors; 256-point window'}, stereo:measureStereo(channelSamples), limitations:[
     'Eventos são candidatos a ataques estimados por energia; não são uma transcrição de notas.',
     'Altura é estimada por autocorrelação monofônica; acordes e misturas podem causar erros de oitava ou notas espúrias.',
     'Tonalidade, compasso e instrumentação não são inferidos pelo analisador WAV básico.',
-    'Detecção de ataques depende do nível, ruído, mixagem e parâmetros da janela.'
+    'Detecção de ataques depende do nível, ruído, mixagem e parâmetros da janela.',
+    'Largura estéreo e correlação usam somente os dois primeiros canais; arquivos multicanal não recebem análise espacial completa.'
   ]};
 }
 
