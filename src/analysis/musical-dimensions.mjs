@@ -86,9 +86,10 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
       continue;
     }
     if (audio && id === 'spectrum' && hasValue(audio.spectrum)) {
-      dims[id] = record(id, audio.spectrum, 'observed', [
-        'Descritores espectrais estimados por FFT em janelas; não identificam instrumentos nem técnicas de produção por si sós.',
-      ], { unit: 'Hz / proporção de energia', method: 'windowed FFT spectral descriptors', evidence: ['audio_analysis.spectrum'], confidence: 0.85 });
+      dims[id] = record(id, { summary: audio.spectrum, temporal_curve: audio.spectral_curve ?? [], change_candidates: audio.spectral_change_candidates ?? [] }, 'observed', [
+        'Descritores espectrais estimados por FFT; mudanças temporais não identificam instrumentos nem provam fronteiras formais.',
+        'Entrada de instrumentos, transientes, ruído e mudanças de arranjo podem alterar o centroide e a distribuição por bandas.',
+      ], { unit: 'Hz / proporção de energia / seconds', method: 'windowed FFT spectral descriptors and 1-second temporal summaries', evidence: ['audio_analysis.spectrum', 'audio_analysis.spectral_curve', 'audio_analysis.spectral_change_candidates'], confidence: 0.8 });
       continue;
     }
     if (audio && id === 'stereo' && hasValue(audio.stereo)) {
