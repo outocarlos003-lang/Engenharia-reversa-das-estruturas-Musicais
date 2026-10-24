@@ -45,6 +45,7 @@ export function analysisReport(input) {
     genre: input.genre ?? [],
     aesthetics: input.aesthetics ?? {},
     production: input.production ?? {},
+    musical_dimensions: input.musical_dimensions ?? {},
     reconstruction: input.reconstruction ?? null,
     limitations: input.limitations ?? [],
   };
