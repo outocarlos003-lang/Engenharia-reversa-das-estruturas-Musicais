@@ -49,6 +49,33 @@ function detectEnergyTransitions(energyCurve) {
   return separated;
 }
 
+function combineTransitionCandidates(energyCandidates, spectralCandidates) {
+  const all = [
+    ...energyCandidates.map(candidate => ({ ...candidate, evidence_types: ['energy'] })),
+    ...spectralCandidates.map(candidate => ({ ...candidate, evidence_types: ['spectrum'] })),
+  ].sort((a, b) => a.time_seconds - b.time_seconds);
+  const combined = [];
+  for (const candidate of all) {
+    const previous = combined[combined.length - 1];
+    if (previous && Math.abs(candidate.time_seconds - previous.time_seconds) <= 1) {
+      previous.evidence_types = [...new Set([...previous.evidence_types, ...candidate.evidence_types])];
+      previous.time_seconds = Number(((previous.time_seconds + candidate.time_seconds) / 2).toFixed(3));
+      previous.status = 'candidate_transition';
+      previous.supporting_candidates.push(candidate);
+      if (previous.evidence_types.length > 1) previous.interpretation = 'Energy and spectral changes coincide; still not a confirmed musical section boundary.';
+    } else {
+      combined.push({
+        time_seconds: candidate.time_seconds,
+        status: 'candidate_transition',
+        evidence_types: candidate.evidence_types,
+        supporting_candidates: [candidate],
+        interpretation: 'Acoustic transition candidate only; no verse/chorus/bridge label is inferred.',
+      });
+    }
+  }
+  return combined;
+}
+
 function normalizeChannels(input, channels) {
   if (!Array.isArray(input) && !ArrayBuffer.isView(input)) throw new TypeError('samples must be an array or typed array');
   if (Array.isArray(input) && input.length && Array.isArray(input[0])) {
@@ -301,7 +328,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     for (let i = start; i < end; i++) sum += mono[i] ** 2;
     energyCurve.push({ start_seconds: Number((start / sampleRate).toFixed(3)), end_seconds: Number((end / sampleRate).toFixed(3)), rms: Number(Math.sqrt(sum / (end - start)).toFixed(6)), rms_dbfs: dbfs(Math.sqrt(sum / (end - start))) });
   }
-  const spectralEvolutionResult = spectralEvolution(mono, sampleRate, frameSize);\n  let stereo = null;
+  const spectralEvolutionResult = spectralEvolution(mono, sampleRate, frameSize);\n  const energyTransitions = detectEnergyTransitions(energyCurve);\n  const combinedTransitions = combineTransitionCandidates(energyTransitions, spectralEvolutionResult.candidates);\n  let stereo = null;
   if (channelSamples.length >= 2) {
     const left = channelSamples[0], right = channelSamples[1];
     let cross = 0, leftPower = 0, rightPower = 0, sidePower = 0, midPower = 0;
@@ -330,7 +357,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     rms_dbfs: dbfs(rms),
     crest_factor_db: Number((dbfs(peak) - dbfs(rms)).toFixed(3)),
     energy_curve: energyCurve,
-    section_candidates: detectEnergyTransitions(energyCurve),
+    section_candidates: energyTransitions,\n    combined_transition_candidates: combinedTransitions,
     spectrum: spectralFeatures(mono, sampleRate, frameSize),\n    spectral_curve: spectralEvolutionResult.curve,\n    spectral_change_candidates: spectralEvolutionResult.candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     stereo,
