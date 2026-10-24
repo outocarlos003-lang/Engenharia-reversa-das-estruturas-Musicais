@@ -18,7 +18,8 @@ export function createPipeline({ analyzers = {} } = {}) {
       const phrases = analyzers.phrases ? await analyzers.phrases({ ...representation, events, motifs }, events, motifs) : representation.phrases;
       const sections = analyzers.sections ? await analyzers.sections({ ...representation, events, motifs, phrases }, events, motifs, phrases) : representation.sections;
       const form = analyzers.form ? await analyzers.form({ ...representation, sections }, sections) : representation.form;
-      const genre = analyzers.genre ? await analyzers.genre({ ...representation, tempo, harmony, sections, form }) : [];
+      const genreResult = analyzers.genre ? await analyzers.genre({ ...representation, tempo, harmony, sections, form }) : [];
+      const genre = Array.isArray(genreResult) ? genreResult : Array.isArray(genreResult?.candidates) ? genreResult.candidates : genreResult;
       const aesthetics = analyzers.aesthetics ? await analyzers.aesthetics({ ...representation, tempo, harmony, sections, form, genre }) : {};
       const production = analyzers.production ? await analyzers.production({ ...representation, sections }) : {};
       const semantics = analyzers.semantics
