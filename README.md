@@ -96,8 +96,22 @@ A primeira versão define o contrato para:
 
 Cada ferramenta deve retornar evidência, confiança e limitações, seguindo o princípio investigativo do REA.
 
-## Estado atual
+## Núcleo estrutural inicial
 
-Esta versão estabelece o núcleo contratual e a arquitetura. Os analisadores reais devem ser adicionados por camadas, sem transformar inferências subjetivas em fatos medidos e sem confundir metadados do suporte de áudio com elementos composicionais.
+src/analysis/structural-engine.mjs implementa uma primeira camada de inferência sobre eventos musicais simbólicos:
+
+- compara janelas de eventos por contorno melódico e intervalos entre ataques normalizados;
+- identifica motivos recorrentes mesmo quando aparecem transpostos;
+- organiza eventos em frases provisórias, associa recorrências a seções e deriva uma sequência formal relacional;
+- separa observações, inferências e questões ainda não resolvidas;
+- registra confiança e limitações, sem apresentar limites de frase/seção como verdades definitivas.
+
+O motor aceita eventos com start ou onset, duration e pitch ou midi. O tempo deve estar numa unidade consistente, preferencialmente pulsos musicais. A inferência de frases e seções é uma hipótese inicial e ainda precisa ser fortalecida com cadências, hierarquia métrica, vozes simultâneas e validação contra partituras ou anotações de referência.
+
+## Estado atual e limitações
+
+O motor estrutural foi adicionado como módulo independente e possui testes de unidade preparados. Ainda é necessário integrá-lo ao fluxo principal do analisador, conectar as ferramentas MCP/CLI a resultados estruturais reais e executar a suíte completa no CI. Portanto, a presença do módulo não significa que toda a pipeline do ERM já esteja operacional.
+
+
 
 **Nenhuma música fornecida em conversas anteriores é usada como fixture ou teste deste projeto.**
