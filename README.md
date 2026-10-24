@@ -124,9 +124,9 @@ Exemplo de estrutura de entrada (amostras ilustrativas, não uma música):
 }
 ```
 
-A análise produz pico e RMS em dBFS, fator de crista, curva RMS em janelas de 100 ms e descritores espectrais por FFT (centroide, roll-off a 85%, flatness e proporção de energia por banda). Para áudio com dois ou mais canais, também calcula correlação entre L/R e relação de energia side/mid. Esses resultados alimentam as dimensões canônicas de loudness, estrutura de energia, espectro e estéreo quando não há anotação explícita que tenha precedência.
+A análise produz pico e RMS em dBFS, fator de crista, curva RMS em janelas de 100 ms e descritores espectrais por FFT (centroide, roll-off a 85%, flatness e proporção de energia por banda). Também calcula um **candidato de centro tonal** por perfil cromático e correlação Krumhansl–Schmuckler, registrando margem, confiança heurística e limitações; isso não substitui análise harmônica validada. Para áudio com dois ou mais canais, também calcula correlação entre L/R e relação de energia side/mid. Esses resultados alimentam as dimensões canônicas de loudness, estrutura de energia, espectro e estéreo quando não há anotação explícita que tenha precedência.
 
-**Limites importantes:** dBFS de pico/RMS não são LUFS integrados nem true peak dBTP; descritores espectrais não identificam automaticamente instrumentos, gênero ou técnica de produção. A estimativa de tonalidade não é inferida por este módulo. Os dados devem ser decodificados previamente por quem os fornece; leitura de arquivos WAV está fora do escopo desta etapa.
+**Limites importantes:** dBFS de pico/RMS não são LUFS integrados nem true peak dBTP; descritores espectrais não identificam automaticamente instrumentos, gênero ou técnica de produção. A estimativa de tonalidade é apenas uma hipótese estatística, especialmente frágil em trechos curtos, percussivos, modais ou com modulações. Os dados devem ser decodificados previamente por quem os fornece; leitura de arquivos WAV está fora do escopo desta etapa.
 
 ## Estado atual e limitações
 
