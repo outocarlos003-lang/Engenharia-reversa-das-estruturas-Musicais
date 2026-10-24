@@ -11,8 +11,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Verify SUNO protocol exists
-        run: test -s SUNO_PROMPT_PROTOCOL.md
+      - name: Verify SUNO protocol and reusable document are present
+        run: |
+          test -s SUNO_PROMPT_PROTOCOL.md
+          test -s docs/modelo-documento-reutilizavel-suno.md
+          test -s skills/reverse-engineer-musical-structure/SKILL.md
+      - name: Prevent regression in mandatory reusable SUNO delivery
+        run: |
+          grep -qi "documento Markdown reutilizável" SUNO_PROMPT_PROTOCOL.md
+          grep -qi "850 caracteres" SUNO_PROMPT_PROTOCOL.md
+          grep -qi "documento reutilizável" skills/reverse-engineer-musical-structure/SKILL.md
+          grep -qi "Prompt final para SUNO AI" docs/modelo-documento-reutilizavel-suno.md
       - name: Accept prompt within the 850-character limit
         run: node scripts/validate-suno-prompt.mjs "Prompt de teste: piano, voz suave e crescendo cinematográfico."
       - name: Reject prompt above the 850-character limit
