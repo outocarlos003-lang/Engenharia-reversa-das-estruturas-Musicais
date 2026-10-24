@@ -72,21 +72,26 @@ test('tracks temporal spectral changes separately from energy changes', () => {
   assert.ok(result.combined_transition_candidates.some(candidate => candidate.evidence_types.includes('spectrum')));
 });
 
-test('estimates spectral novelty and repeated coarse spectral profiles', () => {
+test('estimates spectral novelty and recurring multi-window spectral sequences', () => {
   const sampleRate = 8000;
-  const samples = Array.from({ length: sampleRate * 8 }, (_, i) => {
+  const samples = Array.from({ length: sampleRate * 12 }, (_, i) => {
     const seconds = i / sampleRate;
-    const frequency = seconds < 2 || (seconds >= 4 && seconds < 6) ? 220 : 1200;
+    const frequency = seconds < 3 || (seconds >= 6 && seconds < 9) ? 220 : 1200;
     return 0.25 * Math.sin(2 * Math.PI * frequency * seconds);
   });
   const result = analyzeAudioSamples({ samples, sampleRate, frameSize: 1024 });
   assert.ok(Array.isArray(result.spectral_novelty_curve));
-  assert.ok(result.spectral_novelty_candidates.some(candidate => Math.abs(candidate.time_seconds - 2) <= 1));
+  assert.ok(result.spectral_novelty_candidates.some(candidate => Math.abs(candidate.time_seconds - 3) <= 1));
   assert.ok(Array.isArray(result.spectral_recurrence_candidates));
   assert.ok(result.spectral_recurrence_candidates.some(candidate =>
     Math.abs(candidate.first_window.start_seconds - candidate.second_window.start_seconds) >= 3
   ));
   assert.ok(result.spectral_recurrence_candidates.every(candidate => candidate.status === 'candidate_spectral_recurrence'));
+  assert.ok(Array.isArray(result.spectral_sequence_recurrence_candidates));
+  assert.ok(result.spectral_sequence_recurrence_candidates.some(candidate =>
+    Math.abs(candidate.first_sequence.start_seconds - candidate.second_sequence.start_seconds) >= 5
+  ));
+  assert.ok(result.spectral_sequence_recurrence_candidates.every(candidate => candidate.status === 'candidate_spectral_sequence_recurrence'));
 });
 
 test('rejects invalid PCM input', () => {
