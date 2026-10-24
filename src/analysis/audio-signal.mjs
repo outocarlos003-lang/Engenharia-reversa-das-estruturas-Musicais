@@ -328,7 +328,9 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     for (let i = start; i < end; i++) sum += mono[i] ** 2;
     energyCurve.push({ start_seconds: Number((start / sampleRate).toFixed(3)), end_seconds: Number((end / sampleRate).toFixed(3)), rms: Number(Math.sqrt(sum / (end - start)).toFixed(6)), rms_dbfs: dbfs(Math.sqrt(sum / (end - start))) });
   }
-  const spectralEvolutionResult = spectralEvolution(mono, sampleRate, frameSize);\n  const energyTransitions = detectEnergyTransitions(energyCurve);\n  const combinedTransitions = combineTransitionCandidates(energyTransitions, spectralEvolutionResult.candidates);\n  let stereo = null;
+  const spectralEvolutionResult = spectralEvolution(mono, sampleRate, frameSize);
+  const energyTransitions = detectEnergyTransitions(energyCurve);
+  const combinedTransitions = combineTransitionCandidates(energyTransitions, spectralEvolutionResult.candidates);\n  let stereo = null;
   if (channelSamples.length >= 2) {
     const left = channelSamples[0], right = channelSamples[1];
     let cross = 0, leftPower = 0, rightPower = 0, sidePower = 0, midPower = 0;
@@ -357,7 +359,8 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     rms_dbfs: dbfs(rms),
     crest_factor_db: Number((dbfs(peak) - dbfs(rms)).toFixed(3)),
     energy_curve: energyCurve,
-    section_candidates: energyTransitions,\n    combined_transition_candidates: combinedTransitions,
+    section_candidates: energyTransitions,
+    combined_transition_candidates: combinedTransitions,
     spectrum: spectralFeatures(mono, sampleRate, frameSize),\n    spectral_curve: spectralEvolutionResult.curve,\n    spectral_change_candidates: spectralEvolutionResult.candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     stereo,
