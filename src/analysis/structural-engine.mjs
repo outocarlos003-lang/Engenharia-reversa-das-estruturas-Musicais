@@ -134,6 +134,14 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       score=Math.min(1,score+0.15);
       evidence.push({type:'metrical_accent',weight:0.15,observed:true,value:Number(metricValue)});
     }
+    const previousPitch=previous?pitchOf(previous):null;
+    const currentPitch=pitchOf(event);
+    let melodicTransition='unavailable';
+    if(previousPitch!==null&&previousPitch!==undefined&&currentPitch!==null){
+      const interval=currentPitch-previousPitch;
+      melodicTransition=Math.abs(interval)<0.001?'repeated_pitch':Math.abs(interval)<=2?'stepwise_motion':'leap';
+      evidence.push({type:'melodic_transition',weight:0,observed:true,classification:melodicTransition,boundary_interval:interval,interpretation:'descriptive only; melodic motion does not establish cadence or phrase closure'});
+    }
     const motifEnd=Boolean(previous&&recurringMotifEnds.has(previous.id));
     const motifStart=recurringMotifStarts.has(event.id);
     if(motifEnd||motifStart){
@@ -142,7 +150,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       evidence.push({type:'recurring_motif_boundary',weight,observed:true,motif_ends_before:motifEnd,motif_starts_here:motifStart,interpretation:'recurrence supports grouping but does not independently establish a phrase boundary'});
     }
     const classification=score>=0.75?'supported':score>=0.45?'ambiguous':'insufficient';
-    return {score:Number(score.toFixed(3)),classification,evidence,explicit,declaredPhrase,largeGap:Boolean(previous&&gap>=gapThreshold)};
+    return {score:Number(score.toFixed(3)),classification,evidence,explicit,declaredPhrase,largeGap:Boolean(previous&&gap>=gapThreshold),melodic_transition:melodicTransition};
   };
   for(let i=0;i<events.length;i++){
     const event=events[i];
@@ -173,7 +181,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       boundary_status:reason==='end_of_source'?'provisional':reason==='safety_cap'?'provisional':boundary?.classification==='supported'?'supported':boundary?.classification==='ambiguous'?'ambiguous':'provisional',
       boundary_reason:reason,
       confidence:reason==='end_of_source'?0.35:reason==='safety_cap'?0.25:boundary?.score??0.25,
-      evidence:{score:boundary?.score??0,classification:boundary?.classification??'insufficient',basis:boundaryEvidence,measured_gap_before:index>0?Number((chunk[0].onset-(chunks[index-1].events.at(-1).onset+chunks[index-1].events.at(-1).duration)).toFixed(6)):null,median_inter_onset_interval:medianIOI,median_event_duration:medianDuration,unresolved:['Cadential and harmonic evidence is not inferred unless explicitly supplied; rhythmic and metric evidence remains heuristic.']},
+      evidence:{score:boundary?.score??0,classification:boundary?.classification??'insufficient',melodic_transition:boundary?.melodic_transition??'unavailable',basis:boundaryEvidence,measured_gap_before:index>0?Number((chunk[0].onset-(chunks[index-1].events.at(-1).onset+chunks[index-1].events.at(-1).duration)).toFixed(6)):null,median_inter_onset_interval:medianIOI,median_event_duration:medianDuration,unresolved:['Cadential and harmonic evidence is not inferred unless explicitly supplied; rhythmic and metric evidence remains heuristic.']},
     });
   }
   const sections=[];
@@ -211,9 +219,9 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     form:{sequence:form.map(x=>x.label),pattern:form.map(x=>x.label).join('-'),mapping:form,confidence:form.length?0.45:0},
     epistemic_status:{
       observed:['event order','onsets and durations when supplied','pitch values when supplied'],
-      inferred:['relative interval patterns','motif recurrence','phrase-boundary assessments combining rests, duration, supplied metrical accents and recurring-motif context','provisional section groupings','form sequence'],
+      inferred:['relative interval patterns','motif recurrence','phrase-boundary assessments combining rests, duration, supplied metrical accents, recurring-motif context and descriptive melodic transitions','provisional section groupings','form sequence'],
       unresolved:['meter unless supplied or independently inferred','cadential phrase boundaries','harmonic function unless chord/voice evidence is supplied','instrumentation and style'],
     },
-    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical and recurring-motif evidence; motif recurrence supports grouping but does not prove a phrase boundary. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
+    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical and recurring-motif evidence; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
   };
 }
