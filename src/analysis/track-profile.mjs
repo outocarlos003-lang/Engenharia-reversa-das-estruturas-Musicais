@@ -47,7 +47,7 @@ export function buildTrackProfile(source = {}, computed = {}) {
     loudness: available(loudness, 'source audio feature'),
     energy_structure: available(energyStructure, 'source dynamics/audio feature'),
     spectrum: available(spectrum, 'source spectral feature'),
-    stereo: available(stereo, 'source spatial/audio feature'),
-    epistemic_note: 'Mood, production, themes, culture and genre are reported as annotations, not inferred facts. Loudness, spectrum, energy structure and stereo are not measured unless a compatible source measurement is supplied.',
+    stereo: {status:stereo == null ? 'unavailable' : stereo.status === 'measured' ? 'computed_from_audio' : 'source_supplied',value:stereo ?? null,provenance:stereo == null ? [] : [stereo.status === 'measured' ? 'WAV channel measurements' : 'source spatial/audio feature']},
+    epistemic_note: 'Mood, production, themes, culture and genre are reported as annotations, not inferred facts. WAV loudness and spectrum are computed from decoded samples; stereo metrics are computed when at least two channels are present. Other measurements remain unavailable unless a compatible source measurement is supplied.',
   };
 }
