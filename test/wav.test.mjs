@@ -46,3 +46,13 @@ test('silent signal has no pitch estimate',()=>{
   assert.equal(pitch.frequency_hz,null);
   assert.equal(pitch.midi,null);
 });
+
+test('WAV analysis reports loudness proxies and spectral descriptors',()=>{
+  const result=analyzeWavBuffer(sineWav({duration:1,frequency:440,amplitude:0.5}));
+  assert.ok(Number.isFinite(result.dynamics.loudness_dbfs));
+  assert.ok(Number.isFinite(result.dynamics.peak_dbfs));
+  assert.ok(result.spectrum.centroid_hz>0);
+  assert.ok(result.spectrum.rolloff_hz>0);
+  assert.ok(result.spectrum.flatness>=0);
+  assert.equal(result.spectrum.method.includes('256-point'),true);
+});
