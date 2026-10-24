@@ -12,7 +12,7 @@
   "scripts": {
     "start": "node scripts/erm.mjs mcp",
     "analyze": "node scripts/erm.mjs analyze",
-    "check": "node --check scripts/erm.mjs && node --check src/cli.mjs",
+    "check": "node --check scripts/erm.mjs && node --check src/cli.mjs && node scripts/check-domain-boundary.mjs",
     "test": "node --test"
   },
   "dependencies": {}
