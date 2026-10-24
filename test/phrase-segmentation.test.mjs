@@ -129,3 +129,26 @@ test('uses supplied cadential strength as supporting evidence, not as a fabricat
   assert.ok(boundary.basis.some(item=>item.type==='source_cadential_strength'&&item.source_supplied===true));
   assert.ok(boundary.score>=0.75);
 });
+
+test('recognizes a cadential transition only from supplied harmonic-function labels',()=>{
+  const events=[
+    {id:'a',start:0,duration:1,pitch:60,harmonic_function:'I'},
+    {id:'b',start:1,duration:1,pitch:65,roman_numeral:'V'},
+    {id:'c',start:2,duration:1,pitch:60,roman_numeral:'I'},
+    {id:'d',start:5,duration:1,pitch:62},
+  ];
+  const result=inferMusicalStructure(events,{phraseBoundaryMinGap:0.5,phraseBoundaryGapRatio:1.25,maxPhraseEvents:16});
+  const boundary=result.phrases[1].evidence;
+  assert.ok(boundary.basis.some(item=>item.type==='annotated_harmonic_cadence'&&item.classification==='dominant_to_tonic'&&item.source_supplied===true));
+  assert.ok(boundary.score>=0.75);
+});
+
+test('does not equate a lowercase minor v with an uppercase dominant V',()=>{
+  const events=[
+    {id:'a',start:0,duration:1,pitch:60,roman_numeral:'v'},
+    {id:'b',start:1,duration:1,pitch:60,roman_numeral:'i',phrase_end:true},
+    {id:'c',start:2,duration:1,pitch:62},
+  ];
+  const result=inferMusicalStructure(events);
+  assert.ok(!result.phrases[1].evidence.basis.some(item=>item.type==='annotated_harmonic_cadence'));
+});
