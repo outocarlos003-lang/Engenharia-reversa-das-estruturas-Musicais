@@ -17,7 +17,7 @@ export async function loadMusicalSource(target) {
   if (typeof target !== 'string' || !target.trim()) throw new Error('target must be a non-empty path or JSON string');
   if (!target.trim().startsWith('{') && !target.trim().startsWith('[') && /\.wav$/i.test(target.trim())) {
     const audio = await analyzeWavFile(target.trim());
-    return { source:target.trim(), events:audio.events, dynamics:audio.dynamics, audio:{sample_rate:audio.sampleRate,channels:audio.channels,duration:audio.duration,encoding:audio.encoding,bits_per_sample:audio.bitsPerSample}, limitations:audio.limitations };
+    return { source:target.trim(), events:audio.events, dynamics:audio.dynamics, spectrum:audio.spectrum, audio:{sample_rate:audio.sampleRate,channels:audio.channels,duration:audio.duration,encoding:audio.encoding,bits_per_sample:audio.bitsPerSample}, limitations:audio.limitations };
   }
   const raw = target.trim().startsWith('{') || target.trim().startsWith('[') ? target : await readFile(resolve(target), 'utf8');
   const parsed = JSON.parse(raw);
