@@ -78,7 +78,7 @@ export async function analyzeMusicalSource(target, options={}) {
 export async function runMusicalTool(name,target,options={}) {
   const report=await analyzeMusicalSource(target,options);
   const events=report.events;
-  const dataBase={event_count:events.length,events:report.events,motifs:report.motifs,transformations:report.transformations??report.representation.transformations??[],phrases:report.phrases,sections:report.sections,form:report.form,observations:report.observations,limitations:report.limitations};
+  const dataBase={event_count:events.length,musical_dimensions:report.musical_dimensions,events:report.events,motifs:report.motifs,transformations:report.transformations??report.representation.transformations??[],phrases:report.phrases,sections:report.sections,form:report.form,observations:report.observations,limitations:report.limitations};
   let data=dataBase;
   switch(name){
     case 'extract_musical_features': data={...dataBase,tempo:report.representation.tempo,melody:report.representation.melody,rhythm:report.representation.rhythm};break;
