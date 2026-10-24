@@ -35,3 +35,39 @@ test('genre classifier does not invent labels', async () => {
 test('invalid musical event is rejected with a useful error', async () => {
   await assert.rejects(() => analyzeMusicalSource(JSON.stringify({events:[{start:'not-time'}]})), /start must be numeric/);
 });
+
+test('track profile preserves supplied descriptors and keeps missing acoustic measurements unresolved',async()=>{
+  const annotated=JSON.stringify({
+    tempo:{bpm:98},key:'D minor',
+    emotional_tone:['melancholic','tense'],
+    production:{texture:'lo-fi',reverb:'prominent'},
+    thematic_content:['loss','memory'],
+    cultural_context:'source-described regional tradition',
+    genres:{primary:['trip-hop'],secondary:['ambient']},
+    loudness:{integrated_lufs:-14.2},
+    energy_structure:[{section:'intro',level:0.2},{section:'chorus',level:0.8}],
+    events:[{start:0,duration:0.5,pitch:62},{start:0.5,duration:0.5,pitch:65}]
+  });
+  const report=await analyzeMusicalSource(annotated);
+  const profile=report.representation.track_profile;
+  assert.deepEqual(profile.emotional_tone.value,['melancholic','tense']);
+  assert.deepEqual(profile.genres.primary.value,['trip-hop']);
+  assert.deepEqual(profile.genres.secondary.value,['ambient']);
+  assert.equal(profile.tempo.value,98);
+  assert.equal(profile.key.value,'D minor');
+  assert.equal(profile.loudness.value.integrated_lufs,-14.2);
+  assert.equal(profile.spectrum.status,'unavailable');
+  assert.equal(profile.stereo.status,'unavailable');
+  assert.equal(report.genre.status,'source_supplied');
+});
+
+test('track profile does not invent mood, genre, production, or spectral measurements',async()=>{
+  const report=await analyzeMusicalSource(JSON.stringify({events:[{start:0,duration:1,pitch:60}]}));
+  const profile=report.representation.track_profile;
+  assert.equal(profile.emotional_tone.status,'unavailable');
+  assert.equal(profile.production.status,'unavailable');
+  assert.equal(profile.genres.primary.status,'unavailable');
+  assert.equal(profile.spectrum.status,'unavailable');
+  assert.equal(profile.stereo.status,'unavailable');
+  assert.equal(report.genre.status,'insufficient evidence for automatic classification');
+});
