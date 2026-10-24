@@ -93,3 +93,15 @@ test('describes melodic motion at a boundary without calling it a cadence',()=>{
   assert.ok(boundary.evidence.some(item=>item.type==='melodic_transition'&&item.weight===0));
   assert.ok(boundary.unresolved.some(item=>item.includes('Cadential and harmonic evidence')));
 });
+
+test('describes melodic motion at a boundary',()=>{
+  const events=[
+    {id:'a',start:0,duration:0.5,pitch:60},
+    {id:'b',start:0.5,duration:0.5,pitch:61},
+    {id:'c',start:1,duration:0.5,pitch:62},
+    {id:'d',start:5,duration:0.5,pitch:64},
+  ];
+  const result=inferMusicalStructure(events,{phraseBoundaryMinGap:1,phraseBoundaryGapRatio:2,maxPhraseEvents:16});
+  assert.equal(result.phrases[1].evidence.melodic_transition,'leap');
+  assert.ok(result.phrases[1].evidence.basis.some(item=>item.type==='melodic_transition'));
+});
