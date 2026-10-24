@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "erm://schemas/musical-dimensions.schema.json",
+  "title": "ERM Musical and Audio Dimensions",
+  "description": "Machine-readable contract for perceptual, contextual, musical, and acoustic attributes. Missing evidence must remain missing rather than being guessed.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "type": "string", "default": "0.1.0" },
+    "scope": {
+      "description": "Whether the record describes the whole work or a bounded section.",
+      "oneOf": [
+        { "const": "global" },
+        {
+          "type": "object",
+          "required": ["start", "end", "unit"],
+          "properties": {
+            "start": { "type": "number", "minimum": 0 },
+            "end": { "type": "number", "minimum": 0 },
+            "unit": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "emotional_tone": { "$ref": "#/$defs/dimensionRecord" },
+    "production": { "$ref": "#/$defs/dimensionRecord" },
+    "thematic_content": { "$ref": "#/$defs/dimensionRecord" },
+    "cultural_context": { "$ref": "#/$defs/dimensionRecord" },
+    "primary_genres": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/labelRecord" }
+    },
+    "secondary_genres": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/labelRecord" }
+    },
+    "tempo": {
+      "allOf": [
+        { "$ref": "#/$defs/dimensionRecord" },
+        {
+          "properties": {
+            "value": {
+              "type": ["number", "object", "null"],
+              "description": "BPM estimate or a structured estimate with alternatives."
+            },
+            "unit": { "const": "BPM" }
+          }
+        }
+      ]
+    },
+    "key": { "$ref": "#/$defs/dimensionRecord" },
+    "loudness": { "$ref": "#/$defs/dimensionRecord" },
+    "energy_structure": { "$ref": "#/$defs/dimensionRecord" },
+    "spectrum": { "$ref": "#/$defs/dimensionRecord" },
+    "stereo": { "$ref": "#/$defs/dimensionRecord" }
+  },
+  "$defs": {
+    "dimensionRecord": {
+      "type": "object",
+      "required": ["value", "status", "limitations"],
+      "properties": {
+        "id": { "type": "string" },
+        "value": {},
+        "unit": { "type": ["string", "null"] },
+        "time_range": {
+          "oneOf": [
+            { "const": "global" },
+            {
+              "type": "object",
+              "required": ["start", "end", "unit"],
+              "properties": {
+                "start": { "type": "number", "minimum": 0 },
+                "end": { "type": "number", "minimum": 0 },
+                "unit": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            },
+            { "type": "null" }
+          ]
+        },
+        "method": { "type": ["string", "null"] },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "properties": {
+                  "description": { "type": "string" },
+                  "source": { "type": ["string", "null"] },
+                  "time_range": { "type": ["object", "null"] }
+                },
+                "required": ["description"],
+                "additionalProperties": true
+              }
+            ]
+          },
+          "default": []
+        },
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "status": { "enum": ["observed", "inferred", "interpreted", "unknown", "not_assessed"] },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "labelRecord": {
+      "allOf": [
+        { "$ref": "#/$defs/dimensionRecord" },
+        {
+          "properties": {
+            "value": { "type": ["string", "null"] },
+            "unit": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}
