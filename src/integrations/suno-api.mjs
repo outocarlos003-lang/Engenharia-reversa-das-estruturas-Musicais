@@ -21,9 +21,6 @@ export function buildSunoGenerationRequest(report, options = {}) {
   const representation = report.representation && typeof report.representation === 'object'
     ? report.representation
     : report;
-  const dimensions = report.musical_dimensions && typeof report.musical_dimensions === 'object'
-    ? report.musical_dimensions
-    : {};
   const tags = String(options.style ?? options.tags ?? '').trim();
   const title = String(options.title ?? 'ERM structural reconstruction').trim();
   if (!tags) throw new TypeError('options.style (or options.tags) is required for Suno Custom Mode');
