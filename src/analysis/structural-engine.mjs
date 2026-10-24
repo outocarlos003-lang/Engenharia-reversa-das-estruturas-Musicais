@@ -49,10 +49,19 @@ export function findStructuralMotifs(inputEvents=[], options={}){
         start:window[0]._onset,
         end:window.at(-1)._onset+durationOf(window.at(-1)),
         event_ids:window.map((e)=>e.id??`event-${e._index+1}`),
+        event_indexes:window.map(e=>e._index),
         transposition:window[0]._pitch,
       });
       windows.set(signature,found);
     }
+  }
+  for(const item of windows.values()){
+    const selected=[]; const occupied=new Set();
+    for(const occurrence of item.occurrences.sort((a,b)=>a.start-b.start)){
+      if(occurrence.event_indexes.some(index=>occupied.has(index))) continue;
+      selected.push(occurrence); occurrence.event_indexes.forEach(index=>occupied.add(index));
+    }
+    item.occurrences=selected;
   }
   return [...windows.values()]
     .filter(item=>item.occurrences.length>=minOccurrences)
