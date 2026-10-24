@@ -8,12 +8,15 @@
     "erm": "scripts/erm.mjs",
     "engenharia-musical": "scripts/erm.mjs"
   },
-  "engines": { "node": ">=22.0.0" },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "start": "node scripts/erm.mjs mcp",
     "analyze": "node scripts/erm.mjs analyze",
     "check": "node --check scripts/erm.mjs && node --check src/cli.mjs && node scripts/check-domain-boundary.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "verify": "node scripts/verify.mjs"
   },
   "dependencies": {}
 }
