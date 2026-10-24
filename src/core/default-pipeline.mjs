@@ -8,7 +8,6 @@ import { analyzeHarmony } from '../analysis/harmony.mjs';
 import { inferPhrases } from '../analysis/phrases.mjs';
 import { segmentSections } from '../analysis/sections.mjs';
 import { inferForm } from '../analysis/form.mjs';
-import { classifyGenre } from '../analysis/genre.mjs';
 import { analyzeAesthetics } from '../analysis/aesthetics.mjs';
 import { inferSemanticCues } from '../analysis/semantics.mjs';
 import { analyzeArrangement } from '../analysis/arrangement.mjs';
@@ -16,6 +15,7 @@ import { analyzeDynamics } from '../analysis/dynamics.mjs';
 import { analyzeSpatial } from '../analysis/spatial.mjs';
 import { analyzeProduction } from '../analysis/production.mjs';
 import { buildReconstructionSpec } from '../analysis/reconstruction.mjs';
+import { validateMusicalReport } from '../analysis/validation.mjs';
 
 export function createDefaultPipeline() {
   return createPipeline({
@@ -29,19 +29,27 @@ export function createDefaultPipeline() {
       tempo: representation => representation.timing ?? representation.tempo ?? null,
       harmony: representation => analyzeHarmony(representation),
       events: representation => detectEvents(representation),
-      motifs: representation => findMotifs({ ...representation, events: representation.events ?? [] }),
+      motifs: representation => findMotifs(representation),
       phrases: (representation, events, motifs) => inferPhrases({ ...representation, events, motifs }),
       sections: (representation, events, motifs, phrases) => segmentSections({ ...representation, events, motifs, phrases }),
       form: (representation, sections) => inferForm(sections),
-      genre: ({ representation, tempo, harmony, sections, form }) => classifyGenre({ ...representation, tempo, harmony, sections, form }),
+      genre: () => ({
+        candidates: [],
+        best: null,
+        confidence: 0,
+        limitations: ['No genre reference profiles were supplied to the default pipeline.'],
+      }),
       aesthetics: ({ representation, sections, form }) => analyzeAesthetics({ ...representation, sections, form }),
       production: ({ representation, sections }) => ({
         arrangement: analyzeArrangement({ ...representation, sections }),
         dynamics: analyzeDynamics(representation),
         spatial: analyzeSpatial(representation),
         production: analyzeProduction({ ...representation, sections }),
+        instrumentation: representation.instrumentation ?? {},
       }),
+      semantics: input => inferSemanticCues(input),
       reconstruction: input => buildReconstructionSpec(input),
+      validation: report => validateMusicalReport(report),
     },
   });
 }
