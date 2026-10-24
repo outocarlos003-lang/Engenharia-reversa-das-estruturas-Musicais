@@ -1,19 +1,10 @@
 name: SUNO Prompt Validation
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'SUNO_PROMPT_PROTOCOL.md'
-      - 'scripts/validate-suno-prompt.mjs'
-      - '.github/workflows/suno-prompt-validation.yml'
-  workflow_dispatch:
-    inputs:
-      suno_prompt:
-        description: 'Cole o prompt SUNO (máximo 850 caracteres)'
-        required: true
-        type: string
+
+on: [push, workflow_dispatch]
+
 permissions:
   contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -22,20 +13,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validar prompt enviado manualmente
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          SUNO_PROMPT: ${{ inputs.suno_prompt }}
-        run: node scripts/validate-suno-prompt.mjs "$SUNO_PROMPT"
-      - name: Aceitar prompt válido
-        if: github.event_name == 'push'
+      - name: Validate protocol file
+        run: test -s SUNO_PROMPT_PROTOCOL.md
+      - name: Accept a prompt within the limit
         run: node scripts/validate-suno-prompt.mjs 'Prompt de teste: piano, voz suave e crescendo cinematográfico.'
-      - name: Rejeitar prompt acima de 850 caracteres
-        if: github.event_name == 'push'
+      - name: Reject a prompt above the limit
+        shell: bash
         run: |
           prompt=$(node -e "process.stdout.write('x'.repeat(851))")
           if node scripts/validate-suno-prompt.mjs "$prompt"; then
-            echo 'ERRO: o validador aceitou 851 caracteres.'
+            echo 'ERROR: validator accepted 851 characters.'
             exit 1
           fi
-          echo 'OK: o validador rejeitou 851 caracteres.'
+          echo 'OK: validator rejected 851 characters.'
