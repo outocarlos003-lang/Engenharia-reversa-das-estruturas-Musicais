@@ -220,6 +220,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     const classification=score>=0.75?'supported':score>=0.45?'ambiguous':'insufficient';
     return {score:Number(score.toFixed(3)),classification,evidence,explicit,declaredPhrase,largeGap:Boolean(previous&&gap>=gapThreshold),melodic_transition:melodicTransition};
   };
+  let nextBoundary={reason:'end_of_source',boundary:null};
   for(let i=0;i<events.length;i++){
     const event=events[i];
     const previous=events[i-1];
@@ -229,12 +230,18 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     const shouldSplit=current.length>0&&(assessment.explicit||assessment.declaredPhrase||assessment.score>=0.55||capped);
     if(shouldSplit){
       const reason=assessment.explicit?'source_declared_boundary':assessment.declaredPhrase?'source_phrase_id_change':assessment.largeGap?'inter_phrase_gap':capped?'safety_cap':'combined_boundary_evidence';
-      chunks.push({events:current,reason,boundary:assessment});
+      if(capped){
+        chunks.push({events:current,reason:'safety_cap',boundary:assessment});
+        nextBoundary={reason:'end_of_source',boundary:null};
+      } else {
+        chunks.push({events:current,reason:'end_of_source',boundary:null});
+        nextBoundary={reason,boundary:assessment};
+      }
       current=[];
     }
     current.push(event);
   }
-  if(current.length) chunks.push({events:current,reason:'end_of_source',boundary:null});
+  if(current.length) chunks.push({events:current,...nextBoundary});
   const phrases=[];
   for(let index=0;index<chunks.length;index++){
     const {events:chunk,reason,boundary}=chunks[index];
