@@ -2,11 +2,9 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { analysisReport, evidence, musicalRepresentation, OBSERVATION_TYPES } from '../core/model.mjs';
 import { buildReconstructionSpec } from './reconstruction.mjs';
-import { analyzeWavFile } from '../audio/wav.mjs';
 import { inferMusicalStructure } from './structural-engine.mjs';
 import { analyzeMotifTransformations } from './transformations.mjs';
 import { contextualizeTransformations } from './structural-relations.mjs';
-import { buildTrackProfile } from './track-profile.mjs';
 
 const LIMITATIONS = [
   'Sem áudio bruto ou eventos simbólicos confiáveis, não é possível afirmar notas, harmonia ou forma.',
@@ -15,10 +13,6 @@ const LIMITATIONS = [
 
 export async function loadMusicalSource(target) {
   if (typeof target !== 'string' || !target.trim()) throw new Error('target must be a non-empty path or JSON string');
-  if (!target.trim().startsWith('{') && !target.trim().startsWith('[') && /\.wav$/i.test(target.trim())) {
-    const audio = await analyzeWavFile(target.trim());
-    return { source:target.trim(), events:audio.events, dynamics:audio.dynamics, spectrum:audio.spectrum, stereo:audio.stereo, audio:{sample_rate:audio.sampleRate,channels:audio.channels,duration:audio.duration,encoding:audio.encoding,bits_per_sample:audio.bitsPerSample}, limitations:audio.limitations };
-  }
   const raw = target.trim().startsWith('{') || target.trim().startsWith('[') ? target : await readFile(resolve(target), 'utf8');
   const parsed = JSON.parse(raw);
   const source = Array.isArray(parsed) ? {events:parsed} : parsed;
@@ -51,7 +45,6 @@ export async function analyzeMusicalSource(target, options={}) {
   const bpm=source.tempo?.bpm??(median(iois)?Number((60/median(iois)).toFixed(3)):null);
   const structure=inferMusicalStructure(events,options);
   const transformations=contextualizeTransformations(analyzeMotifTransformations(events,options.transformations),structure);
-  const trackProfile=buildTrackProfile(source,{tempo:bpm});
   const limitations=[...LIMITATIONS,...(source.limitations??[]),...structure.limitations];
   const observations=[
     evidence({id:'event-order',claim:'Ordered musical events supplied by the source',value:events.length,type:OBSERVATION_TYPES.MEASURED,sources:[String(source.source??target)]}),
@@ -66,14 +59,14 @@ export async function analyzeMusicalSource(target, options={}) {
     melody:{pitches,intervals,contour:structure.invariants.melodic_contour},
     harmony:source.harmony??{},
     events,motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
-    dynamics:source.dynamics??{},instrumentation:source.instrumentation??{},spatial:source.spatial??{},track_profile:trackProfile,limitations,
+    dynamics:source.dynamics??{},instrumentation:source.instrumentation??{},spatial:source.spatial??{},limitations,
   });
   return analysisReport({
     target:String(source.source??target),representation,observations,events,
     motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
-    genre:{status:trackProfile.genres.primary.value.length?'source_supplied':'insufficient evidence for automatic classification',primary:trackProfile.genres.primary.value,secondary:trackProfile.genres.secondary.value,candidates:[]},
-    aesthetics:{status:trackProfile.emotional_tone.value!==null||trackProfile.thematic_content.value!==null?'source annotations available; interpretation not independently verified':'insufficient evidence for grounded inference',emotional_tone:trackProfile.emotional_tone,themes:trackProfile.thematic_content,cultural_context:trackProfile.cultural_context,production:trackProfile.production},
-    production:trackProfile.production,
+    genre:{status:'insufficient evidence for automatic classification',primary:[],secondary:[],candidates:[]},
+    aesthetics:{status:'insufficient evidence for grounded inference',dimensions:{},character_hypotheses:[]},
+    production:{},
     reconstruction:buildReconstructionSpec({...representation,source:source.source??target,unresolved:limitations}),
     limitations,
   });
@@ -96,11 +89,11 @@ export async function runMusicalTool(name,target,options={}) {
     case 'analyze_rhythmic_structure': data={event_count:events.length,inter_onset_intervals:report.representation.rhythm.inter_onset_intervals,motifs:report.motifs};break;
     case 'analyze_harmonic_structure': data={status:'insufficient harmonic evidence',harmony:report.representation.harmony};break;
     case 'analyze_instrument_layers': data={instrumentation:report.representation.instrumentation,status:'only source-declared layers are reported'};break;
-    case 'analyze_dynamics': data={dynamics:report.representation.dynamics,energy_structure:report.representation.track_profile?.energy_structure,loudness:report.representation.track_profile?.loudness};break;
+    case 'analyze_dynamics': data={dynamics:report.representation.dynamics};break;
     case 'analyze_spatial_structure': data={spatial:report.representation.spatial};break;
     case 'classify_genre': data=report.genre;break;
-    case 'analyze_aesthetics': data={...report.aesthetics,cultural_context:report.representation.track_profile?.cultural_context,track_profile:report.representation.track_profile};break;
-    case 'extract_musical_features': data={...dataBase,tempo:report.representation.tempo,melody:report.representation.melody,rhythm:report.representation.rhythm,track_profile:report.representation.track_profile};break;
+    case 'analyze_aesthetics': data=report.aesthetics;break;
+    case 'extract_musical_features': data={...dataBase,tempo:report.representation.tempo,melody:report.representation.melody,rhythm:report.representation.rhythm};break;
     case 'build_reconstruction_spec': data=report.reconstruction;break;
     case 'compare_reconstructions': {
       const otherTarget=options.other;
