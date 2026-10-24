@@ -1,0 +1,19 @@
+{
+  "name": "engenharia-reversa-das-estruturas-musicais",
+  "version": "0.1.0",
+  "description": "Engenharia reversa musical baseada em evidências, MCP e reconstrução estrutural.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "erm": "scripts/erm.mjs",
+    "engenharia-musical": "scripts/erm.mjs"
+  },
+  "engines": { "node": ">=22.0.0" },
+  "scripts": {
+    "start": "node scripts/erm.mjs mcp",
+    "analyze": "node scripts/erm.mjs analyze",
+    "check": "node --check scripts/erm.mjs && node --check src/cli.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {}
+}
