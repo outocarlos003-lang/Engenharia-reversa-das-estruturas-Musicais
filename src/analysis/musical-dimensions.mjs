@@ -106,7 +106,7 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
         confidence: Number.isFinite(region.confidence) ? Math.max(0, Math.min(1, region.confidence)) : null,
         source: region.source ?? 'source annotation',
       })) : [];
-      if (validRegions.length && !(audio && Array.isArray(audio.fundamental_frequency_track) && audio.fundamental_frequency_track.length)) {
+      if (validRegions.length && !hasValue(source.voice_analysis ?? source.vocal_analysis ?? representation.voice_analysis) && !(audio && Array.isArray(audio.fundamental_frequency_track) && audio.fundamental_frequency_track.length)) {
         dims[id] = record(id, {
           vocal_regions: validRegions,
           vocal_source_confirmed: true,
