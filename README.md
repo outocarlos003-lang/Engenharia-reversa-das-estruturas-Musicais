@@ -20,7 +20,7 @@ Um sistema de engenharia reversa musical inspirado na arquitetura conceitual do 
 | REA | ERM |
 | --- | --- |
 | target/application | obra/fonte musical |
-| binary/artifact | representação musical extraída |
+| material investigado | representação musical extraída |
 | static inspection | análise rítmica, melódica, harmônica e estrutural |
 | runtime observation | observação temporal de eventos musicais |
 | trace/evidence | evidência musical |
