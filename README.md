@@ -105,11 +105,12 @@ src/analysis/structural-engine.mjs implementa uma primeira camada de inferência
 - relaciona ocorrências por transposição, inversão, retrogradação e retrogradação invertida;
 - detecta aumentação e diminuição rítmica quando as proporções entre ataques permanecem consistentes;
 - inclui as relações de transformação no relatório canônico e nas respostas MCP de análise de motivos e estrutura melódica;
+- associa cada transformação às frases e seções provisórias que contêm seus eventos, distinguindo relações dentro de uma frase, entre frases da mesma seção e entre seções;
 - organiza eventos em frases provisórias, associa recorrências a seções e deriva uma sequência formal relacional;
 - separa observações, inferências e questões ainda não resolvidas;
 - registra confiança e limitações, sem apresentar limites de frase/seção como verdades definitivas.
 
-O motor aceita eventos com start ou onset, duration e pitch ou midi. O tempo deve estar numa unidade consistente, preferencialmente pulsos musicais. A inferência de frases e seções é uma hipótese inicial e ainda precisa ser fortalecida com cadências, hierarquia métrica, vozes simultâneas e validação contra partituras ou anotações de referência. As transformações são relações matemáticas entre sequências simbólicas; não provam, isoladamente, função formal ou intenção composicional.
+O motor aceita eventos com start ou onset, duration e pitch ou midi. O tempo deve estar numa unidade consistente, preferencialmente pulsos musicais. A inferência de frases e seções é uma hipótese inicial e ainda precisa ser fortalecida com cadências, hierarquia métrica, vozes simultâneas e validação contra partituras ou anotações de referência. As transformações são relações matemáticas entre sequências simbólicas; não provam, isoladamente, função formal ou intenção composicional. O módulo `src/analysis/structural-relations.mjs` acrescenta contexto hierárquico a essas relações, sem esconder a incerteza das fronteiras de frase e seção.
 
 ## Estado atual e limitações
 
