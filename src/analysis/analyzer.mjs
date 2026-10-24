@@ -6,6 +6,7 @@ import { inferMusicalStructure } from './structural-engine.mjs';
 import { analyzeMotifTransformations } from './transformations.mjs';
 import { contextualizeTransformations } from './structural-relations.mjs';
 import { buildMusicalDimensions } from './musical-dimensions.mjs';
+import { analyzeAudioSamples } from './audio-signal.mjs';
 
 const LIMITATIONS = [
   'Sem áudio bruto ou eventos simbólicos confiáveis, não é possível afirmar notas, harmonia ou forma.',
@@ -62,7 +63,11 @@ export async function analyzeMusicalSource(target, options={}) {
     events,motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
     dynamics:source.dynamics??{},instrumentation:source.instrumentation??{},spatial:source.spatial??{},limitations,
   });
-  const musicalDimensions=buildMusicalDimensions(source,representation);
+  const audioAnalysis = source.audio_analysis ?? (source.audio_samples && source.sample_rate_hz
+    ? analyzeAudioSamples({samples:source.audio_samples,sampleRate:Number(source.sample_rate_hz),channels:Number(source.audio_channels??1)})
+    : null);
+  const dimensionsSource = audioAnalysis ? {...source,audio_analysis:audioAnalysis} : source;
+  const musicalDimensions=buildMusicalDimensions(dimensionsSource,representation);
   return analysisReport({
     target:String(source.source??target),representation,observations,events,
     musical_dimensions:musicalDimensions,
