@@ -5,6 +5,50 @@ function dbfs(amplitude) {
   return amplitude <= EPSILON ? -120 : Number((20 * Math.log10(amplitude)).toFixed(3));
 }
 
+function detectEnergyTransitions(energyCurve) {
+  const binSeconds = 1;
+  const bins = [];
+  for (let start = 0; start < energyCurve.length;) {
+    const first = energyCurve[start];
+    const binStart = first.start_seconds;
+    let weightedSquares = 0, duration = 0;
+    while (start < energyCurve.length && energyCurve[start].start_seconds < binStart + binSeconds) {
+      const point = energyCurve[start++];
+      const span = Math.max(0, point.end_seconds - point.start_seconds);
+      weightedSquares += point.rms ** 2 * span;
+      duration += span;
+    }
+    const rms = duration ? Math.sqrt(weightedSquares / duration) : 0;
+    bins.push({ time_seconds: Number((binStart + duration / 2).toFixed(3)), rms, rms_dbfs: dbfs(rms) });
+  }
+  const raw = [];
+  for (let i = 1; i < bins.length; i++) {
+    const delta = bins[i].rms_dbfs - bins[i - 1].rms_dbfs;
+    if (Math.abs(delta) < 5) continue;
+    const neighboringChanges = [];
+    for (let j = Math.max(1, i - 2); j <= Math.min(bins.length - 1, i + 2); j++) {
+      neighboringChanges.push(Math.abs(bins[j].rms_dbfs - bins[j - 1].rms_dbfs));
+    }
+    if (Math.abs(delta) < Math.max(...neighboringChanges)) continue;
+    raw.push({
+      time_seconds: Number(((bins[i - 1].time_seconds + bins[i].time_seconds) / 2).toFixed(3)),
+      change_db: Number(delta.toFixed(3)),
+      before_rms_dbfs: bins[i - 1].rms_dbfs,
+      after_rms_dbfs: bins[i].rms_dbfs,
+      confidence: Number(Math.min(0.9, 0.35 + (Math.abs(delta) - 5) / 20).toFixed(2)),
+      status: 'candidate_transition',
+      method: 'adjacent 1-second RMS bins; local-maximum change threshold of 5 dB',
+    });
+  }
+  const separated = [];
+  for (const candidate of raw) {
+    if (separated.length && candidate.time_seconds - separated[separated.length - 1].time_seconds < 2) {
+      if (Math.abs(candidate.change_db) > Math.abs(separated[separated.length - 1].change_db)) separated[separated.length - 1] = candidate;
+    } else separated.push(candidate);
+  }
+  return separated;
+}
+
 function normalizeChannels(input, channels) {
   if (!Array.isArray(input) && !ArrayBuffer.isView(input)) throw new TypeError('samples must be an array or typed array');
   if (Array.isArray(input) && input.length && Array.isArray(input[0])) {
@@ -224,7 +268,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     rms_amplitude: Number(rms.toFixed(6)),
     rms_dbfs: dbfs(rms),
     crest_factor_db: Number((dbfs(peak) - dbfs(rms)).toFixed(3)),
-    energy_curve: energyCurve,
+    energy_curve: energyCurve,\n    section_candidates: detectEnergyTransitions(energyCurve),
     spectrum: spectralFeatures(mono, sampleRate, frameSize),
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     stereo,
