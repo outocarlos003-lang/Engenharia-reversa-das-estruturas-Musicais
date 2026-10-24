@@ -111,6 +111,7 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
           vocal_regions: validRegions,
           vocal_source_confirmed: true,
           confirmation_method: 'explicit source annotation',
+          acoustic_region_summaries: Array.isArray(audio?.vocal_region_acoustics) ? audio.vocal_region_acoustics : [],
           voice_specific_analysis: null,
         }, 'observed', [
           'Os intervalos vocais foram fornecidos como anotação de origem; o motor não detectou nem validou automaticamente a presença de voz.',
@@ -137,6 +138,7 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
         vocal_regions: validRegions,
         vocal_source_confirmed: validRegions.length > 0,
         vocal_region_confirmation_method: validRegions.length ? 'explicit source annotation' : null,
+        acoustic_region_summaries: Array.isArray(audio.vocal_region_acoustics) ? audio.vocal_region_acoustics : [],
         voice_specific_analysis: null,
       }, 'inferred', [
         'A trilha de F0 é uma estimativa de periodicidade acústica e não confirma que a fonte seja voz humana; instrumentos monofônicos também podem produzir candidatos semelhantes.',
