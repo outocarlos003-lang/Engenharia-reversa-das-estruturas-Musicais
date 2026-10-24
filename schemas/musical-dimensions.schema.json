@@ -53,7 +53,8 @@
     "energy_structure": { "$ref": "#/$defs/dimensionRecord" },
     "spectrum": { "$ref": "#/$defs/dimensionRecord" },
     "stereo": { "$ref": "#/$defs/dimensionRecord" },
-    "instrumental_sound_sources": { "$ref": "#/$defs/dimensionRecord" }
+    "instrumental_sound_sources": { "$ref": "#/$defs/dimensionRecord" },
+    "mechanical_voice_analysis": { "$ref": "#/$defs/dimensionRecord" }
   },
   "$defs": {
     "dimensionRecord": {
