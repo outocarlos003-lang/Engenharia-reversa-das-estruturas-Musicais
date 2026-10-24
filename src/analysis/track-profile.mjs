@@ -17,7 +17,8 @@ export function buildTrackProfile(source = {}, computed = {}) {
   const culturalContext = first(profile.cultural_context, source.cultural_context, source.culture, annotations.cultural_context);
   const primaryGenres = list(first(profile.genres?.primary, source.genres?.primary, source.primary_genres, source.genre));
   const secondaryGenres = list(first(profile.genres?.secondary, source.genres?.secondary, source.secondary_genres));
-  const tempo = first(suppliedFeatures.tempo, source.tempo?.bpm, source.tempo, computed.tempo);
+  const suppliedTempo = first(suppliedFeatures.tempo, source.tempo?.bpm, typeof source.tempo === 'number' ? source.tempo : undefined);
+  const tempo = first(suppliedTempo, computed.tempo);
   const key = first(suppliedFeatures.key, source.key, source.tonal_center, source.harmony?.key);
   const loudness = first(suppliedFeatures.loudness, source.loudness, source.dynamics?.loudness);
   const energyStructure = first(suppliedFeatures.energy_structure, source.energy_structure, source.dynamics?.energy_structure, source.dynamics?.energy_curve);
@@ -38,9 +39,9 @@ export function buildTrackProfile(source = {}, computed = {}) {
       secondary: {status:secondaryGenres.length?'source_supplied':'unavailable',value:secondaryGenres,provenance:secondaryGenres.length?['source annotation']:[]},
     },
     tempo: {
-      status: tempo == null ? 'unavailable' : (tempo === computed.tempo ? 'computed_from_event_timing' : 'source_supplied'),
+      status: tempo == null ? 'unavailable' : (suppliedTempo !== undefined ? 'source_supplied' : 'computed_from_event_timing'),
       value: tempo ?? null,
-      provenance: tempo == null ? [] : [tempo === computed.tempo ? 'event onsets' : 'source tempo/audio features'],
+      provenance: tempo == null ? [] : [suppliedTempo !== undefined ? 'source tempo/audio features' : 'event onsets'],
     },
     key: available(key, 'source key/tonal-center annotation'),
     loudness: available(loudness, 'source audio feature'),
