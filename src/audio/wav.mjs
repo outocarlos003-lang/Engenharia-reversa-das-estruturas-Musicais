@@ -40,6 +40,34 @@ export function decodeWav(buffer) {
   return { samples:mono, sampleRate, channels, duration:frames/sampleRate, encoding:format===3?'ieee-float':'pcm', bitsPerSample:bits };
 }
 
+export function estimatePitch(samples, sampleRate, {minHz=60,maxHz=1000,minConfidence=0.65}={}) {
+  if (!samples?.length || !Number.isFinite(sampleRate) || sampleRate<=0) return {frequency_hz:null,midi:null,confidence:0};
+  let mean=0; for (const x of samples) mean+=x; mean/=samples.length;
+  const centered=new Float32Array(samples.length); let energy=0;
+  for(let i=0;i<samples.length;i++){centered[i]=samples[i]-mean;energy+=centered[i]*centered[i];}
+  if(energy/samples.length<1e-7) return {frequency_hz:null,midi:null,confidence:0};
+  const minLag=Math.max(2,Math.floor(sampleRate/maxHz));
+  const maxLag=Math.min(samples.length-2,Math.ceil(sampleRate/minHz));
+  let bestLag=-1,best=-1;
+  for(let lag=minLag;lag<=maxLag;lag++){
+    let cross=0,left=0,right=0;
+    for(let i=0;i<samples.length-lag;i++){
+      const a=centered[i],b=centered[i+lag];cross+=a*b;left+=a*a;right+=b*b;
+    }
+    const score=cross/Math.sqrt(Math.max(1e-20,left*right));
+    if(score>best){best=score;bestLag=lag;}
+  }
+  if(bestLag<0 || best<minConfidence) return {frequency_hz:null,midi:null,confidence:Number(Math.max(0,best).toFixed(4))};
+  const corr=lag=>{let v=0;for(let i=0;i<samples.length-lag;i++)v+=centered[i]*centered[i+lag];return v;};
+  let lag=bestLag;
+  if(bestLag>minLag && bestLag<maxLag){
+    const a=corr(bestLag-1),b=corr(bestLag),d=corr(bestLag+1),den=a-2*b+d;
+    if(Math.abs(den)>1e-12) lag+=Math.max(-0.5,Math.min(0.5,0.5*(a-d)/den));
+  }
+  const hz=sampleRate/lag, midi=69+12*Math.log2(hz/440);
+  return {frequency_hz:Number(hz.toFixed(2)),midi:Number(midi.toFixed(2)),confidence:Number(best.toFixed(4))};
+}
+
 export function analyzeWavBuffer(buffer, {windowMs=50, hopMs=25}={}) {
   const wav=decodeWav(buffer), {samples,sampleRate}=wav;
   const window=Math.max(32,Math.round(sampleRate*windowMs/1000));
@@ -52,7 +80,7 @@ export function analyzeWavBuffer(buffer, {windowMs=50, hopMs=25}={}) {
       if(i>start && ((v>=0&&previous<0)||(v<0&&previous>=0))) crossings++;
       previous=v;
     }
-    frames.push({start:start/sampleRate,rms:Math.sqrt(energy/window),zero_crossing_rate:crossings/window});
+    const pitch=estimatePitch(samples.subarray(start,start+window),sampleRate);\n    frames.push({start:start/sampleRate,rms:Math.sqrt(energy/window),zero_crossing_rate:crossings/window,...pitch});
   }
   const rms=frames.map(f=>f.rms);
   const sorted=[...rms].sort((a,b)=>a-b);
@@ -63,14 +91,14 @@ export function analyzeWavBuffer(buffer, {windowMs=50, hopMs=25}={}) {
   for(const frame of frames) {
     const rise=frame.rms-previous;
     if(frame.rms>=threshold && rise>Math.max(0.008,peak*0.04) && frame.start-lastOnset>=0.09) {
-      events.push({id:'onset-'+(events.length+1),start:Number(frame.start.toFixed(4)),duration:null,pitch:null,amplitude:Number(frame.rms.toFixed(6)),zero_crossing_rate:Number(frame.zero_crossing_rate.toFixed(6)),kind:'audio_onset_candidate'});
+      events.push({id:'onset-'+(events.length+1),start:Number(frame.start.toFixed(4)),duration:null,pitch:frame.midi,frequency_hz:frame.frequency_hz,pitch_confidence:frame.confidence,amplitude:Number(frame.rms.toFixed(6)),zero_crossing_rate:Number(frame.zero_crossing_rate.toFixed(6)),kind:'audio_onset_candidate'});
       lastOnset=frame.start;
     }
     previous=frame.rms;
   }
   return { ...wav, frames:frames.length, events, dynamics:{rms_min:rms.length?Math.min(...rms):0,rms_median:median,rms_peak:peak,window_ms:windowMs,hop_ms:hopMs}, limitations:[
     'Eventos são candidatos a ataques estimados por energia; não são uma transcrição de notas.',
-    'Pitch, tonalidade, compasso e instrumentação não são inferidos pelo analisador WAV básico.',
+    'Altura é estimada por autocorrelação monofônica; acordes e misturas podem causar erros de oitava ou notas espúrias.',\n    'Tonalidade, compasso e instrumentação não são inferidos pelo analisador WAV básico.',
     'Detecção de ataques depende do nível, ruído, mixagem e parâmetros da janela.'
   ]};
 }
