@@ -109,6 +109,25 @@ src/analysis/structural-engine.mjs implementa uma primeira camada de inferência
 O motor aceita eventos com start ou onset, duration e pitch ou midi. O tempo deve estar numa unidade consistente, preferencialmente pulsos musicais. A inferência de frases e seções é uma hipótese inicial e ainda precisa ser fortalecida com cadências, hierarquia métrica, vozes simultâneas e validação contra partituras ou anotações de referência. A segmentação registra a pontuação, a classificação e cada fonte de evidência disponível. A recorrência de motivos pode apoiar uma hipótese de agrupamento, mas não estabelece sozinha uma fronteira frasal. O movimento melódico na fronteira é registrado descritivamente (passo, repetição ou salto), sem ser tratado como detector de cadência. Marcadores de término, força cadencial fornecida pela fonte e transições entre funções harmônicas anotadas (por exemplo, V–I) podem apoiar a segmentação. As transições por função são reconhecidas a partir de rótulos harmônicos fornecidos; as relações por símbolos de acorde exigem também uma tônica declarada. Nenhuma delas é deduzida de notas isoladas, e a distinção entre algarismos romanos maiúsculos e minúsculos é preservada. Quando `chord_pitches` ou `chord_notes` contém alturas MIDI numéricas para os dois acordes adjacentes, o motor registra classes de altura comuns e conexões por semitom como descrição de condução de vozes; essa evidência não recebe peso cadencial, não atribui vozes individuais e não prova uma cadência. Pausas, alongamentos e acentos métricos são indícios heurísticos, não prova de frase musical; pausas expressivas podem gerar cortes indevidos, e cadências legato exigem evidência harmônica ou de partitura. As transformações são relações matemáticas entre sequências simbólicas; não provam, isoladamente, função formal ou intenção composicional. O módulo `src/analysis/structural-relations.mjs` acrescenta contexto hierárquico a essas relações, sem esconder a incerteza das fronteiras de frase e seção.
 
 
+## Análise de sinal PCM (sem leitura de arquivos de áudio)
+
+O módulo `src/analysis/audio-signal.mjs` calcula métricas a partir de amostras PCM **já decodificadas e normalizadas em `[-1, 1]`**. Não abre nem decodifica WAV, MP3 ou outros arquivos/container. Para usar a análise acústica, forneça as amostras em JSON com `audio_samples` e `sample_rate_hz`; canais podem ser representados como quadros `[[L, R], ...]` ou como amostras intercaladas acompanhadas de `audio_channels`.
+
+Exemplo de estrutura de entrada (amostras ilustrativas, não uma música):
+
+```json
+{
+  "events": [],
+  "sample_rate_hz": 8000,
+  "audio_channels": 1,
+  "audio_samples": [0.0, 0.1, 0.0, -0.1]
+}
+```
+
+A análise produz pico e RMS em dBFS, fator de crista, curva RMS em janelas de 100 ms e descritores espectrais por FFT (centroide, roll-off a 85%, flatness e proporção de energia por banda). Para áudio com dois ou mais canais, também calcula correlação entre L/R e relação de energia side/mid. Esses resultados alimentam as dimensões canônicas de loudness, estrutura de energia, espectro e estéreo quando não há anotação explícita que tenha precedência.
+
+**Limites importantes:** dBFS de pico/RMS não são LUFS integrados nem true peak dBTP; descritores espectrais não identificam automaticamente instrumentos, gênero ou técnica de produção. A estimativa de tonalidade não é inferida por este módulo. Os dados devem ser decodificados previamente por quem os fornece; leitura de arquivos WAV está fora do escopo desta etapa.
+
 ## Estado atual e limitações
 
 O motor estrutural está integrado ao analisador e às ferramentas MCP/CLI. Uma verificação automatizada de fronteira bloqueia regressões que tentem introduzir conceitos técnicos alheios à representação composicional. A suíte completa ainda exige estabilização: o CI continua apontando falhas em segmentação frasal e em alguns módulos auxiliares.
