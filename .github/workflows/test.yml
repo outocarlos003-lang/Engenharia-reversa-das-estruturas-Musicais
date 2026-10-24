@@ -24,3 +24,6 @@ jobs:
             exit 1
           fi
           echo "OK: 851-character prompt rejected"
+      - run: node scripts/check-domain-boundary.mjs
+      - run: npm test
+      - run: npm run check
