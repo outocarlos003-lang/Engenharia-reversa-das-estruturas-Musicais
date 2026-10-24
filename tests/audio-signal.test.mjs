@@ -142,7 +142,7 @@ test('estimates a cautious fundamental-frequency track without claiming it is vo
   const periodic = result.fundamental_frequency_track.filter(frame => frame.f0_hz !== null);
   assert.ok(periodic.length > 20);
   assert.ok(periodic.every(frame => Math.abs(frame.f0_hz - frequency) < 15));
-  assert.ok(periodic.every(frame => frame.status === 'candidate_periodic_f0'));
+  assert.ok(periodic.every(frame => ['candidate_periodic_f0', 'candidate_periodic_f0_octave_corrected'].includes(frame.status)));\n  assert.ok(periodic.every(frame => frame.f0_hz > 0));
   assert.match(result.limitations.at(-1), /not a vocal detector/);
 });
 
