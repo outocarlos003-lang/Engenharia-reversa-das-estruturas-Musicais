@@ -190,6 +190,51 @@ function spectralEvolution(mono, sampleRate, frameSize) {
   return { curve, candidates };
 }
 
+function analyzeSpectralNovelty(curve) {
+  const vectorFor = point => {
+    const bands = point.low_mid_high_energy;
+    return [point.centroid_hz, bands.low * 4000, bands.mid * 4000, bands.high * 4000];
+  };
+  const cosine = (a, b) => {
+    const dot = a.reduce((sum, value, i) => sum + value * b[i], 0);
+    const normA = Math.sqrt(a.reduce((sum, value) => sum + value * value, 0));
+    const normB = Math.sqrt(b.reduce((sum, value) => sum + value * value, 0));
+    return normA && normB ? dot / (normA * normB) : 0;
+  };
+  const vectors = curve.map(vectorFor);
+  const novelty = [];
+  for (let i = 1; i < curve.length; i++) {
+    const distance = 1 - cosine(vectors[i - 1], vectors[i]);
+    novelty.push({
+      time_seconds: Number(((curve[i - 1].end_seconds + curve[i].start_seconds) / 2).toFixed(3)),
+      novelty: Number(distance.toFixed(4)),
+    });
+  }
+  const peaks = novelty.filter((point, i) => point.novelty >= 0.12
+    && point.novelty >= (novelty[i - 1]?.novelty ?? -Infinity)
+    && point.novelty >= (novelty[i + 1]?.novelty ?? -Infinity));
+  const repeats = [];
+  for (let i = 0; i < curve.length; i++) {
+    for (let j = i + 3; j < curve.length; j++) {
+      const similarity = cosine(vectors[i], vectors[j]);
+      if (similarity < 0.98) continue;
+      repeats.push({
+        first_window: { start_seconds: curve[i].start_seconds, end_seconds: curve[i].end_seconds },
+        second_window: { start_seconds: curve[j].start_seconds, end_seconds: curve[j].end_seconds },
+        similarity: Number(similarity.toFixed(4)),
+        status: 'candidate_spectral_recurrence',
+        method: 'cosine similarity of 1-second spectral summary vectors; threshold >= 0.98',
+        limitations: ['Spectral similarity does not establish melodic, rhythmic or harmonic identity; different musical material may have similar timbre.'],
+      });
+    }
+  }
+  return {
+    novelty_curve: novelty,
+    novelty_candidates: peaks.map(point => ({ ...point, status: 'candidate_spectral_novelty', method: 'local maximum of adjacent-window cosine distance; threshold >= 0.12' })),
+    recurrence_candidates: repeats,
+  };
+}
+
 function spectralFeatures(mono, sampleRate, frameSize) {
   const n = Math.min(frameSize, 2 ** Math.floor(Math.log2(mono.length)));
   if (n < 32) return { centroid_hz: null, rolloff_85_hz: null, flatness: null, low_mid_high_energy: null };
@@ -329,6 +374,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     energyCurve.push({ start_seconds: Number((start / sampleRate).toFixed(3)), end_seconds: Number((end / sampleRate).toFixed(3)), rms: Number(Math.sqrt(sum / (end - start)).toFixed(6)), rms_dbfs: dbfs(Math.sqrt(sum / (end - start))) });
   }
   const spectralEvolutionResult = spectralEvolution(mono, sampleRate, frameSize);
+  const spectralNoveltyResult = analyzeSpectralNovelty(spectralEvolutionResult.curve);
   const energyTransitions = detectEnergyTransitions(energyCurve);
   const combinedTransitions = combineTransitionCandidates(energyTransitions, spectralEvolutionResult.candidates);
   let stereo = null;
@@ -365,6 +411,9 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     spectrum: spectralFeatures(mono, sampleRate, frameSize),
     spectral_curve: spectralEvolutionResult.curve,
     spectral_change_candidates: spectralEvolutionResult.candidates,
+    spectral_novelty_curve: spectralNoveltyResult.novelty_curve,
+    spectral_novelty_candidates: spectralNoveltyResult.novelty_candidates,
+    spectral_recurrence_candidates: spectralNoveltyResult.recurrence_candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     stereo,
     limitations: [
