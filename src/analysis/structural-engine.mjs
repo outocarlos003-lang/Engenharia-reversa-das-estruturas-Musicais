@@ -96,23 +96,56 @@ export function inferMusicalStructure(inputEvents=[], options={}){
   const minGap=Math.max(0,Number(options.phraseBoundaryMinGap??0.75));
   const chunks=[];
   let current=[];
+  const durations=events.map(e=>e.duration).filter(v=>v>0).sort((a,b)=>a-b);
+  const medianDuration=durations.length?durations[Math.floor(durations.length/2)]:null;
+  const assessBoundary=(previous,event,gap)=>{
+    const evidence=[];
+    let score=0;
+    const explicit=Boolean(event.phrase_boundary_before||event.phrase_start||event.cadence_boundary_before);
+    const declaredPhrase=Boolean(previous&&event.phrase_id!=null&&previous.phrase_id!=null&&event.phrase_id!==previous.phrase_id);
+    if(explicit){score=Math.max(score,0.95);evidence.push({type:'source_marker',weight:0.95,observed:true});}
+    if(declaredPhrase){score=Math.max(score,0.95);evidence.push({type:'phrase_id_change',weight:0.95,observed:true});}
+    const gapThreshold=Math.max(minGap,(medianIOI??minGap)*gapRatio);
+    const gapRatioObserved=gapThreshold>0?gap/gapThreshold:0;
+    if(previous&&gap>=gapThreshold){
+      const weight=Math.min(0.8,0.55+Math.max(0,gapRatioObserved-1)*0.12);
+      score=Math.max(score,weight);
+      evidence.push({type:'inter_event_rest',weight:Number(weight.toFixed(3)),observed:true,gap:Number(gap.toFixed(6)),threshold:Number(gapThreshold.toFixed(6)),ratio:Number(gapRatioObserved.toFixed(3))});
+    } else if(previous) evidence.push({type:'inter_event_rest',weight:0,observed:false,gap:Number(gap.toFixed(6)),threshold:Number(gapThreshold.toFixed(6))});
+    const durationRatio=previous&&medianDuration>0?previous.duration/medianDuration:0;
+    if(durationRatio>=1.5){
+      const weight=Math.min(0.25,0.1+(durationRatio-1.5)*0.05);
+      score=Math.min(1,score+weight);
+      evidence.push({type:'duration_elongation',weight:Number(weight.toFixed(3)),observed:true,ratio:Number(durationRatio.toFixed(3))});
+    }
+    const metricValue=event.metrical_strength??event.beat_strength??event.accent_strength;
+    const metricBoundary=finite(metricValue)&&Number(metricValue)>=0.75;
+    if(metricBoundary){
+      score=Math.min(1,score+0.15);
+      evidence.push({type:'metrical_accent',weight:0.15,observed:true,value:Number(metricValue)});
+    }
+    const classification=score>=0.75?'supported':score>=0.45?'ambiguous':'insufficient';
+    return {score:Number(score.toFixed(3)),classification,evidence,explicit,declaredPhrase,largeGap:Boolean(previous&&gap>=gapThreshold)};
+  };
   for(let i=0;i<events.length;i++){
     const event=events[i];
     const previous=events[i-1];
     const gap=previous?event.onset-(previous.onset+previous.duration):0;
-    const largeGap=Boolean(previous&&gap>=Math.max(minGap,(medianIOI??minGap)*gapRatio));
-    const explicit=Boolean(event.phrase_boundary_before||event.phrase_start||event.cadence_boundary_before);
-    const declaredPhrase=Boolean(previous&&event.phrase_id!=null&&previous.phrase_id!=null&&event.phrase_id!==previous.phrase_id);
+    const assessment=assessBoundary(previous,event,gap);
     const capped=current.length>=maxPhraseEvents;
-    const boundary=current.length>0&&(largeGap||explicit||declaredPhrase||capped);
-    if(boundary){chunks.push({events:current,reason:largeGap?'inter_phrase_gap':explicit?'source_declared_boundary':declaredPhrase?'source_phrase_id_change':'safety_cap'});current=[];}
+    const shouldSplit=current.length>0&&(assessment.explicit||assessment.declaredPhrase||assessment.score>=0.55||capped);
+    if(shouldSplit){
+      const reason=assessment.explicit?'source_declared_boundary':assessment.declaredPhrase?'source_phrase_id_change':assessment.largeGap?'inter_phrase_gap':capped?'safety_cap':'combined_boundary_evidence';
+      chunks.push({events:current,reason,boundary:assessment});
+      current=[];
+    }
     current.push(event);
   }
-  if(current.length) chunks.push({events:current,reason:'end_of_source'});
+  if(current.length) chunks.push({events:current,reason:'end_of_source',boundary:null});
   const phrases=[];
   for(let index=0;index<chunks.length;index++){
-    const {events:chunk,reason}=chunks[index];
-    const boundaryEvidence=reason==='inter_phrase_gap'?['inter-onset gap and preceding event duration compared with local median onset interval']:reason==='source_declared_boundary'||reason==='source_phrase_id_change'?['boundary explicitly represented in source events']:['maximum event count used as a safety cap'];
+    const {events:chunk,reason,boundary}=chunks[index];
+    const boundaryEvidence=boundary?.evidence??[];
     phrases.push({
       id:`phrase-${phrases.length+1}`,start:chunk[0].onset,
       end:chunk.at(-1).onset+chunk.at(-1).duration,
@@ -120,10 +153,10 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       interval_signature:intervalSignature(chunk),
       contour:contour(intervalSignature(chunk)),
       motif_ids:motifs.filter(m=>m.occurrences.some(o=>o.event_ids.some(id=>chunk.some(e=>e.id===id)))).map(m=>m.id),
-      boundary_status:reason==='inter_phrase_gap'||reason==='source_declared_boundary'||reason==='source_phrase_id_change'?'inferred':'provisional',
+      boundary_status:reason==='end_of_source'?'provisional':reason==='safety_cap'?'provisional':boundary?.classification==='supported'?'supported':boundary?.classification==='ambiguous'?'ambiguous':'provisional',
       boundary_reason:reason,
-      confidence:reason==='source_declared_boundary'||reason==='source_phrase_id_change'?0.9:reason==='inter_phrase_gap'?0.65:0.35,
-      evidence:{basis:boundaryEvidence,measured_gap_before:index>0?Number((chunk[0].onset-(chunks[index-1].events.at(-1).onset+chunks[index-1].events.at(-1).duration)).toFixed(6)):null,median_inter_onset_interval:medianIOI,unresolved:['cadential and harmonic evidence is not available unless supplied separately']},
+      confidence:reason==='end_of_source'?0.35:reason==='safety_cap'?0.25:boundary?.score??0.25,
+      evidence:{score:boundary?.score??0,classification:boundary?.classification??'insufficient',basis:boundaryEvidence,measured_gap_before:index>0?Number((chunk[0].onset-(chunks[index-1].events.at(-1).onset+chunks[index-1].events.at(-1).duration)).toFixed(6)):null,median_inter_onset_interval:medianIOI,median_event_duration:medianDuration,unresolved:['Cadential and harmonic evidence is not inferred unless explicitly supplied; rhythmic and metric evidence remains heuristic.']},
     });
   }
   const sections=[];
@@ -161,9 +194,9 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     form:{sequence:form.map(x=>x.label),pattern:form.map(x=>x.label).join('-'),mapping:form,confidence:form.length?0.45:0},
     epistemic_status:{
       observed:['event order','onsets and durations when supplied','pitch values when supplied'],
-      inferred:['relative interval patterns','motif recurrence','phrase boundaries from rhythmic gaps or source declarations','provisional section groupings','form sequence'],
+      inferred:['relative interval patterns','motif recurrence','phrase-boundary assessments combining rests, duration and supplied metrical accents','provisional section groupings','form sequence'],
       unresolved:['meter unless supplied or independently inferred','cadential phrase boundaries','harmonic function unless chord/voice evidence is supplied','instrumentation and style'],
     },
-    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Gap-based phrase segmentation can miss legato cadences and may split expressive pauses.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
+    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine available temporal, source-declared and optional metrical evidence; expressive pauses may still mislead, and cadences require explicit harmonic or score evidence.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
   };
 }
