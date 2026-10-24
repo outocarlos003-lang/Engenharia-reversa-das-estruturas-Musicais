@@ -5,6 +5,7 @@ import { buildReconstructionSpec } from './reconstruction.mjs';
 import { inferMusicalStructure } from './structural-engine.mjs';
 import { analyzeMotifTransformations } from './transformations.mjs';
 import { contextualizeTransformations } from './structural-relations.mjs';
+import { buildMusicalDimensions } from './musical-dimensions.mjs';
 
 const LIMITATIONS = [
   'Sem áudio bruto ou eventos simbólicos confiáveis, não é possível afirmar notas, harmonia ou forma.',
@@ -61,8 +62,10 @@ export async function analyzeMusicalSource(target, options={}) {
     events,motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
     dynamics:source.dynamics??{},instrumentation:source.instrumentation??{},spatial:source.spatial??{},limitations,
   });
+  const musicalDimensions=buildMusicalDimensions(source,representation);
   return analysisReport({
     target:String(source.source??target),representation,observations,events,
+    musical_dimensions:musicalDimensions,
     motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
     genre:[],
     aesthetics:{status:'insufficient evidence for grounded inference',dimensions:{},character_hypotheses:[]},
