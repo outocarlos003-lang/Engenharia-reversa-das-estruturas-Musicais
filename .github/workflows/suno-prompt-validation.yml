@@ -1,0 +1,22 @@
+name: SUNO Prompt Validation
+on:
+  workflow_dispatch:
+    inputs:
+      suno_prompt:
+        description: 'Cole o prompt SUNO (máximo 850 caracteres)'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validar limite de caracteres
+        env:
+          SUNO_PROMPT: ${{ inputs.suno_prompt }}
+        run: node scripts/validate-suno-prompt.mjs "$SUNO_PROMPT"
