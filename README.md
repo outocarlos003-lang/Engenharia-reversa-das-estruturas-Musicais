@@ -89,6 +89,40 @@ A primeira versão define o contrato para:
 
 Cada ferramenta deve retornar evidência, confiança e limitações, seguindo o princípio investigativo do REA.
 
+## Integração opcional com gcui-art/suno-api
+
+O ERM pode enviar referências estruturais explícitas para uma instância própria de [gcui-art/suno-api](https://github.com/gcui-art/suno-api), gerar rascunhos musicais e depois analisar o áudio gerado com o pipeline acústico do ERM. A integração é opcional e não adiciona dependências externas.
+
+### Capacidades integradas
+
+- Converte dados fornecidos de andamento, métrica, centro tonal, sequência de seções e progressão harmônica em um pedido de **Custom Mode**.
+- Expõe um cliente HTTP para geração simples, geração customizada, geração de letras, consulta de faixas, consulta de quota e extensão de áudio.
+- Mantém os fatos musicais ausentes como não especificados; não inventa tonalidade, acordes ou seções.
+- Não faz chamadas de rede durante a análise musical normal.
+
+Exemplo em Node.js:
+
+```js
+import { SunoApiClient } from './src/integrations/suno-api.mjs';
+
+const suno = new SunoApiClient({
+  baseUrl: process.env.SUNO_API_BASE_URL,
+});
+
+const generated = await suno.generate(ermReport, {
+  title: 'Reconstrução estrutural',
+  style: 'cinematic ambient, gradual build',
+  instrumental: true,
+  waitAudio: false,
+});
+
+console.log(generated);
+```
+
+Configure `SUNO_API_BASE_URL` com a URL da **sua instância auto-hospedada**. A integração não lê nem armazena cookies de Suno e não envia credenciais: a sessão Suno e a configuração de CAPTCHA exigidas pelo wrapper devem permanecer no servidor da API. Não exponha essa instância sem autenticação/restrições de rede.
+
+**Limitações e direitos:** `gcui-art/suno-api` é um wrapper comunitário não oficial; endpoints, modelos, autenticação, limites e termos do serviço subjacente podem mudar. A geração consome créditos do serviço e os resultados são propostas generativas, não provas de equivalência estrutural. Use o ERM para analisar o áudio retornado e comparar as diferenças, em vez de assumir que o gerador obedeceu exatamente ao pedido. Revise a licença LGPL-3.0-or-later do projeto externo antes de redistribuir ou incorporar código dele; esta integração do ERM usa apenas uma interface HTTP documentada.
+
 ## Núcleo estrutural inicial
 
 src/analysis/structural-engine.mjs implementa uma primeira camada de inferência sobre eventos musicais simbólicos:
