@@ -4,6 +4,7 @@ import { analysisReport, evidence, musicalRepresentation, OBSERVATION_TYPES } fr
 import { buildReconstructionSpec } from './reconstruction.mjs';
 import { analyzeWavFile } from '../audio/wav.mjs';
 import { inferMusicalStructure } from './structural-engine.mjs';
+import { analyzeMotifTransformations } from './transformations.mjs';
 
 const LIMITATIONS = [
   'Sem áudio bruto ou eventos simbólicos confiáveis, não é possível afirmar notas, harmonia ou forma.',
@@ -47,11 +48,13 @@ export async function analyzeMusicalSource(target, options={}) {
   const iois=events.slice(1).map((e,i)=>e.onset-events[i].onset).filter(v=>v>0);
   const bpm=source.tempo?.bpm??(median(iois)?Number((60/median(iois)).toFixed(3)):null);
   const structure=inferMusicalStructure(events,options);
+  const transformations=analyzeMotifTransformations(events,options.transformations);
   const limitations=[...LIMITATIONS,...(source.limitations??[]),...structure.limitations];
   const observations=[
     evidence({id:'event-order',claim:'Ordered musical events supplied by the source',value:events.length,type:OBSERVATION_TYPES.MEASURED,sources:[String(source.source??target)]}),
     ...(intervals.some(v=>v!==null)?[evidence({id:'melodic-intervals',claim:'Successive pitch intervals derived from supplied symbolic events',value:intervals,type:OBSERVATION_TYPES.INFERRED,confidence:0.95,sources:['events.pitch or events.midi']})]:[]),
     ...(structure.motifs.length?[evidence({id:'recurring-motifs',claim:'Recurring contour and normalized rhythm patterns',value:structure.motifs.map(m=>({id:m.id,recurrence:m.recurrence,signature:m.signature})),type:OBSERVATION_TYPES.INFERRED,confidence:0.85,sources:['structural-engine']})]:[]),
+    ...(transformations.length?[evidence({id:'motif-transformations',claim:'Relations between recurring musical event windows',value:transformations.map(t=>({id:t.id,melodic_relation:t.melodic_relation,rhythmic_relation:t.rhythmic_relation})),type:OBSERVATION_TYPES.INFERRED,confidence:0.82,sources:['transformations-engine']})]:[]),
   ];
   const representation=musicalRepresentation({
     tempo:{bpm,meter:source.meter??null},
@@ -59,12 +62,12 @@ export async function analyzeMusicalSource(target, options={}) {
     rhythm:{inter_onset_intervals:events.slice(1).map((e,i)=>Number((e.onset-events[i].onset).toFixed(6))),event_count:events.length},
     melody:{pitches,intervals,contour:structure.invariants.melodic_contour},
     harmony:source.harmony??{},
-    events,motifs:structure.motifs,phrases:structure.phrases,sections:structure.sections,form:structure.form,
+    events,motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
     dynamics:source.dynamics??{},instrumentation:source.instrumentation??{},spatial:source.spatial??{},limitations,
   });
   return analysisReport({
     target:String(source.source??target),representation,observations,events,
-    motifs:structure.motifs,phrases:structure.phrases,sections:structure.sections,form:structure.form,
+    motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
     genre:{status:'insufficient evidence for automatic classification',candidates:[]},
     aesthetics:{status:'insufficient evidence for grounded inference'},
     reconstruction:buildReconstructionSpec({...representation,source:source.source??target,unresolved:limitations}),
@@ -75,7 +78,7 @@ export async function analyzeMusicalSource(target, options={}) {
 export async function runMusicalTool(name,target,options={}) {
   const report=await analyzeMusicalSource(target,options);
   const events=report.events;
-  const dataBase={event_count:events.length,events:report.events,motifs:report.motifs,phrases:report.phrases,sections:report.sections,form:report.form,observations:report.observations,limitations:report.limitations};
+  const dataBase={event_count:events.length,events:report.events,motifs:report.motifs,transformations:report.transformations??report.representation.transformations??[],phrases:report.phrases,sections:report.sections,form:report.form,observations:report.observations,limitations:report.limitations};
   let data=dataBase;
   switch(name){
     case 'extract_musical_features': data={...dataBase,tempo:report.representation.tempo,melody:report.representation.melody,rhythm:report.representation.rhythm};break;
@@ -84,8 +87,8 @@ export async function runMusicalTool(name,target,options={}) {
     case 'detect_musical_events': data={events:report.events,event_count:events.length};break;
     case 'segment_music': data={phrases:report.phrases,sections:report.sections,form:report.form,limitations:report.limitations};break;
     case 'find_repeated_sections': data={sections:report.sections.filter(s=>(s.occurrences?.length??0)>1),motifs:report.motifs};break;
-    case 'analyze_motifs': data={motifs:report.motifs,evidence:report.observations,limitations:report.limitations};break;
-    case 'analyze_melodic_structure': data={melody:report.representation.melody,motifs:report.motifs};break;
+    case 'analyze_motifs': data={motifs:report.motifs,transformations:report.transformations??report.representation.transformations??[],evidence:report.observations,limitations:report.limitations};break;
+    case 'analyze_melodic_structure': data={melody:report.representation.melody,motifs:report.motifs,transformations:report.transformations??report.representation.transformations??[]};break;
     case 'analyze_rhythmic_structure': data={event_count:events.length,inter_onset_intervals:report.representation.rhythm.inter_onset_intervals,motifs:report.motifs};break;
     case 'analyze_harmonic_structure': data={status:'insufficient harmonic evidence',harmony:report.representation.harmony};break;
     case 'analyze_instrument_layers': data={instrumentation:report.representation.instrumentation,status:'only source-declared layers are reported'};break;
