@@ -11,6 +11,7 @@ const DIMENSIONS = Object.freeze([
   ['energy_structure', 'Estrutura de energia'],
   ['spectrum', 'Espectro'],
   ['stereo', 'Estéreo'],
+  ['instrumental_sound_sources', 'Instrumental / fontes sonoras'],
 ]);
 
 function hasValue(value) {
@@ -38,7 +39,7 @@ function record(id, value, status, limitations, extras = {}) {
 }
 
 /**
- * Builds the canonical twelve-dimension record without fabricating missing data.
+ * Builds the canonical thirteen-dimension record without fabricating missing data.
  * Explicit source annotations take precedence over conservative derivations.
  */
 export function buildMusicalDimensions(source = {}, representation = {}) {
@@ -118,6 +119,19 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
       dims[id] = record(id, value, 'observed', [
         'Energy is represented only by supplied dynamics/profile data; no audio RMS, LUFS, or transient analysis was performed.',
       ], { method: source.energy_structure ? 'source energy metadata' : 'supplied dynamics profile', evidence: ['source dynamics metadata'], confidence: 0.6 });
+      continue;
+    }
+
+    if (id === 'instrumental_sound_sources' && (hasValue(source.instrumentation) || hasValue(representation.instrumentation) || hasValue(source.vocal_presence) || hasValue(source.vocal_content))) {
+      const instrumentation = source.instrumentation ?? representation.instrumentation ?? null;
+      const vocalPresence = source.vocal_presence ?? source.vocal_content ?? null;
+      dims[id] = record(id, { instrumentation, vocal_presence: vocalPresence }, 'observed', [
+        'O valor deriva de metadados fornecidos pela fonte; sem análise vocal/instrumental validada, a ausência de dados vocais não significa que a faixa seja instrumental.',
+        'Descritores espectrais isolados não identificam com segurança instrumentos ou fontes sonoras específicas.',
+      ], { method: 'source instrumentation and vocal metadata', evidence: [
+        ...(hasValue(instrumentation) ? ['source.instrumentation or representation.instrumentation'] : []),
+        ...(hasValue(vocalPresence) ? ['source.vocal_presence or source.vocal_content'] : []),
+      ], confidence: 0.6 });
       continue;
     }
 
