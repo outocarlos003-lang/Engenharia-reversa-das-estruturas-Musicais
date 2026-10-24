@@ -119,12 +119,13 @@ test('honors an explicit terminal marker on the preceding event',()=>{
 
 test('uses supplied cadential strength as supporting evidence, not as a fabricated harmonic inference',()=>{
   const events=[
-    {id:'a',start:0,duration:1,pitch:60,cadential_strength:0.9},
+    {id:'a',start:0,duration:1,pitch:60},
     {id:'b',start:1,duration:1,pitch:62},
-    {id:'c',start:2,duration:1,pitch:64},
+    {id:'c',start:2,duration:1,pitch:64,cadential_strength:0.9},
+    {id:'d',start:5,duration:1,pitch:65},
   ];
-  const result=inferMusicalStructure(events,{phraseBoundaryMinGap:10,phraseBoundaryGapRatio:10,maxPhraseEvents:16});
+  const result=inferMusicalStructure(events,{phraseBoundaryMinGap:0.5,phraseBoundaryGapRatio:1.25,maxPhraseEvents:16});
   const boundary=result.phrases[1].evidence;
   assert.ok(boundary.basis.some(item=>item.type==='source_cadential_strength'&&item.source_supplied===true));
-  assert.ok(boundary.score>=0.2);
+  assert.ok(boundary.score>=0.75);
 });
