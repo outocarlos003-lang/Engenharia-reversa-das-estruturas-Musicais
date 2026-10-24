@@ -1,7 +1,5 @@
 import readline from 'node:readline';
 import { catalog } from './tools.mjs';
-import { inspectWav } from '../adapters/wav.mjs';
-import { evidence, OBSERVATION_TYPES } from '../core/model.mjs';
 
 const definitions = catalog().map(tool => ({
   name: tool.name,
@@ -22,21 +20,15 @@ function error(id, code, message) {
 }
 
 async function callTool(name, target) {
-  if (name === 'inspect_audio_artifact') {
-    const artifact = await inspectWav(target);
-    return {
-      evidence: [
-        evidence({ id: 'duration', claim: 'duration_seconds', value: artifact.duration, type: OBSERVATION_TYPES.MEASURED, confidence: 1 }),
-        evidence({ id: 'sample-rate', claim: 'sample_rate_hz', value: artifact.format.sample_rate, type: OBSERVATION_TYPES.MEASURED, confidence: 1 }),
-        evidence({ id: 'channels', claim: 'channel_count', value: artifact.format.channels, type: OBSERVATION_TYPES.MEASURED, confidence: 1 }),
-      ],
-      artifact,
-      limitations: ['The built-in adapter currently supports RIFF/WAVE inspection.'],
-    };
-  }
   return {
+    tool: name,
+    target,
     evidence: [],
-    limitations: ['Tool contract is installed, but this DSP/music-analysis adapter is not implemented yet.'],
+    confidence: 0,
+    limitations: [
+      'O contrato da ferramenta está instalado, mas o analisador musical correspondente ainda não foi implementado.',
+      'Metadados de contêiner e codec não são tratados como evidência composicional.',
+    ],
   };
 }
 
@@ -47,19 +39,22 @@ rl.on('line', async line => {
   try { request = JSON.parse(line); } catch { return error(null, -32700, 'Invalid JSON'); }
 
   if (request.method === 'initialize') {
-    return reply(request.id, { protocolVersion: request.params?.protocolVersion ?? '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'erm', version: '0.1.0' } });
+    return reply(request.id, {
+      protocolVersion: request.params?.protocolVersion ?? '2025-06-18',
+      capabilities: { tools: {} },
+      serverInfo: { name: 'erm', version: '0.1.0' },
+    });
   }
   if (request.method === 'notifications/initialized') return;
   if (request.method === 'tools/list') return reply(request.id, { tools: definitions });
   if (request.method === 'tools/call') {
     const name = request.params?.name;
-    const tool = definitions.find(x => x.name === name);
-    if (!tool) return error(request.id, -32602, `Unknown tool: ${name}`);
+    if (!definitions.some(tool => tool.name === name)) return error(request.id, -32602, `Unknown tool: ${name}`);
     const target = request.params?.arguments?.target;
     if (!target) return error(request.id, -32602, 'target is required');
     try {
       const result = await callTool(name, target);
-      return reply(request.id, { content: [{ type: 'text', text: JSON.stringify({ tool: name, target, ...result }) }] });
+      return reply(request.id, { content: [{ type: 'text', text: JSON.stringify(result) }] });
     } catch (cause) {
       return error(request.id, -32000, cause.message);
     }
