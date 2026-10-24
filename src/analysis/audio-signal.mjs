@@ -279,7 +279,7 @@ function estimateFundamentalFrequencyTrack(mono, sampleRate) {
       track.push({ time_seconds: Number(((start + frameSize / 2) / sampleRate).toFixed(3)), f0_hz: null, periodicity: 0, status: 'unvoiced_or_uncertain' });
       continue;
     }
-    let bestLag = null, bestCorrelation = -1;
+    const correlations = [];
     for (let lag = minLag; lag <= maxLag; lag++) {
       let cross = 0, leftEnergy = 0, rightEnergy = 0;
       for (let i = 0; i < frameSize - lag; i++) {
@@ -288,8 +288,15 @@ function estimateFundamentalFrequencyTrack(mono, sampleRate) {
         rightEnergy += frame[i + lag] ** 2;
       }
       const denominator = Math.sqrt(leftEnergy * rightEnergy);
-      const correlation = denominator > EPSILON ? cross / denominator : 0;
-      if (correlation > bestCorrelation) { bestCorrelation = correlation; bestLag = lag; }
+      correlations.push(denominator > EPSILON ? cross / denominator : 0);
+    }
+    let bestLag = null, bestCorrelation = -1;
+    for (let i = 1; i < correlations.length - 1; i++) {
+      const correlation = correlations[i];
+      if (correlation < 0.6 || correlation < correlations[i - 1] || correlation < correlations[i + 1]) continue;
+      bestLag = minLag + i;
+      bestCorrelation = correlation;
+      break;
     }
     const accepted = bestLag !== null && bestCorrelation >= 0.6;
     track.push({
