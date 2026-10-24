@@ -1,9 +1,11 @@
 export function compareReports(reference, candidate) {
   const metrics = {
-    duration: similarity(reference.artifact?.duration, candidate.artifact?.duration),
-    tempo: similarity(reference.observations?.find(x => x.claim === 'tempo')?.value?.bpm, candidate.observations?.find(x => x.claim === 'tempo')?.value?.bpm),
+    tempo: similarity(findClaim(reference, 'tempo')?.bpm, findClaim(candidate, 'tempo')?.bpm),
     sections: sequenceSimilarity(reference.sections ?? [], candidate.sections ?? [], 'label'),
     motifs: sequenceSimilarity(reference.motifs ?? [], candidate.motifs ?? [], 'id'),
+    phrases: sequenceSimilarity(reference.phrases ?? [], candidate.phrases ?? [], 'id'),
+    form: sequenceSimilarity(reference.form ?? [], candidate.form ?? [], 'label'),
+    instrumentation: objectSimilarity(reference.representation?.instrumentation, candidate.representation?.instrumentation),
   };
 
   return {
@@ -12,8 +14,13 @@ export function compareReports(reference, candidate) {
     deviations: Object.entries(metrics)
       .filter(([, value]) => value !== null && value < 0.9)
       .map(([metric, value]) => ({ metric, similarity: value })),
-    limitations: ['Similarity metrics are structural indicators, not perceptual truth.'],
+    limitations: ['Similarity metrics compare musical structure; they are not perceptual truth.'],
   };
+}
+
+function findClaim(report, claim) {
+  return report.observations?.find(item => item.claim === claim)?.value
+    ?? report.representation?.[claim];
 }
 
 function similarity(a, b) {
@@ -27,4 +34,12 @@ function sequenceSimilarity(a, b, key) {
   if (!a.length || !b.length) return 0;
   const matches = a.filter((x, i) => x?.[key] === b[i]?.[key]).length;
   return matches / Math.max(a.length, b.length);
+}
+
+function objectSimilarity(a, b) {
+  if (!a || !b) return null;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  if (!keys.size) return 1;
+  const matches = [...keys].filter(key => JSON.stringify(a[key]) === JSON.stringify(b[key])).length;
+  return matches / keys.size;
 }
