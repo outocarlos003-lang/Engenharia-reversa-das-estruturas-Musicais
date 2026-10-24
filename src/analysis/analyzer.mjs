@@ -64,7 +64,7 @@ export async function analyzeMusicalSource(target, options={}) {
   return analysisReport({
     target:String(source.source??target),representation,observations,events,
     motifs:structure.motifs,transformations,phrases:structure.phrases,sections:structure.sections,form:structure.form,
-    genre:{status:'insufficient evidence for automatic classification',primary:[],secondary:[],candidates:[]},
+    genre:[],
     aesthetics:{status:'insufficient evidence for grounded inference',dimensions:{},character_hypotheses:[]},
     production:{},
     reconstruction:buildReconstructionSpec({...representation,source:source.source??target,unresolved:limitations}),
@@ -91,7 +91,7 @@ export async function runMusicalTool(name,target,options={}) {
     case 'analyze_instrument_layers': data={instrumentation:report.representation.instrumentation,status:'only source-declared layers are reported'};break;
     case 'analyze_dynamics': data={dynamics:report.representation.dynamics};break;
     case 'analyze_spatial_structure': data={spatial:report.representation.spatial};break;
-    case 'classify_genre': data=report.genre;break;
+    case 'classify_genre': data={status:'insufficient evidence for automatic classification',primary:[],secondary:[],candidates:[]};break;
     case 'analyze_aesthetics': data=report.aesthetics;break;
     case 'extract_musical_features': data={...dataBase,tempo:report.representation.tempo,melody:report.representation.melody,rhythm:report.representation.rhythm};break;
     case 'build_reconstruction_spec': data=report.reconstruction;break;
