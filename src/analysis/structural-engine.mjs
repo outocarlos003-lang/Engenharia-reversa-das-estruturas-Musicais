@@ -4,7 +4,7 @@
  * Time values are in beats unless the caller explicitly supplies another unit.
  */
 
-const finite = value => Number.isFinite(Number(value));
+const finite = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const onsetOf = event => Number(event.onset ?? event.start ?? 0);
 const durationOf = event => Math.max(0, Number(event.duration ?? event.duration_beats ?? 0));
 const pitchOf = event => finite(event.midi ?? event.pitch) ? Number(event.midi ?? event.pitch) : null;
