@@ -116,3 +116,46 @@ O motor estrutural está integrado ao analisador e às ferramentas MCP/CLI. Uma 
 
 
 **Nenhuma música fornecida em conversas anteriores é usada como fixture ou teste deste projeto.**
+
+
+## Dimensões de análise musical e sonora
+
+A análise da obra deve combinar atributos perceptivos, contextuais, musicais e acústicos. Cada atributo deve registrar **valor observado**, **método/fonte**, **confiança**, **intervalo temporal** e **limitações**. Não confundir uma medida de áudio com uma interpretação estética.
+
+| Dimensão | O que investigar | Evidências e representações sugeridas |
+| --- | --- | --- |
+| Tom emocional | Clima afetivo percebido e sua evolução ao longo da obra | Valência, energia percebida, tensão, serenidade, tristeza, euforia; anotar se é inferência automática ou interpretação humana |
+| Produção | Técnicas e escolhas de gravação, edição, arranjo de mixagem e masterização | Reverb, delay, compressão, saturação, distorção, automação, camadas, textura e qualidade da gravação; separar indícios audíveis de suposições sobre o processo |
+| Temática | Assuntos, imagens, narrativa e motivos líricos ou instrumentais | Letras quando disponíveis, imagens recorrentes, motivos musicais associados, perspectiva narrativa e mudanças por seção |
+| Cultura | Contexto histórico, geográfico, social e tradição musical | Instrumentação, idioma, práticas performáticas, referências documentadas e contexto de circulação; evitar inferir identidade cultural apenas pelo som |
+| Gêneros principais | Tradição ou gênero que melhor descreve a identidade dominante | Rótulos ordenados, justificativa por ritmo, harmonia, timbre, forma e convenções estilísticas |
+| Gêneros secundários | Influências, fusões e convenções complementares | Rótulos adicionais com evidências específicas e confiança independente |
+| Andamento | Velocidade e organização do pulso | BPM estimado, faixa de confiança, mudanças de andamento, meio-tempo/dobro-tempo e estabilidade do pulso |
+| Tom (tonalidade) | Centro tonal e organização harmônica | Tônica, modo maior/menor ou outra organização modal, perfil de confiança, acordes e regiões de modulação; distinguir estimativa automática de análise validada |
+| Loudness | Intensidade sonora percebida e variação de nível | Loudness integrado e por seção em LUFS, loudness range (LRA), true peak em dBTP e dinâmica; informar padrão de medição e janela |
+| Estrutura de energia | Evolução da intensidade e densidade ao longo do tempo | Curva temporal de energia RMS ou loudness, envelope, transientes, densidade de eventos e mudanças entre intro, versos, refrões, pontes e final |
+| Espectro | Distribuição de energia por frequência e conteúdo tímbrico | Centroide espectral, roll-off, largura de banda, fluxo espectral, bandas de frequência e evolução temporal; considerar a taxa de amostragem |
+| Estéreo | Distribuição espacial entre canais e sensação de largura | Correlação L/R, diferença lateral/central, largura estéreo, panorama e compatibilidade mono; distinguir largura medida de percepção subjetiva |
+
+### Formato recomendado para cada atributo
+
+- `id`: identificador estável da dimensão.
+- `value`: valor, rótulo ou descrição inferida.
+- `unit`: unidade quando aplicável (por exemplo, BPM, LUFS, dBTP, Hz).
+- `time_range`: início e fim da evidência, ou indicação de que se aplica à obra inteira.
+- `method`: método, ferramenta, modelo ou protocolo de anotação.
+- `evidence`: medições, eventos, trechos ou observações que sustentam a conclusão.
+- `confidence`: confiança entre 0 e 1, quando o método permitir.
+- `status`: `observed`, `inferred` ou `interpreted`.
+- `limitations`: ambiguidades, condições de medição e possíveis explicações alternativas.
+
+### Regras de interpretação
+
+1. **Contextualizar no tempo:** atributos globais não devem apagar contrastes entre seções.
+2. **Separar medição e percepção:** LUFS, BPM e descritores espectrais não equivalem diretamente a emoção, groove ou qualidade artística.
+3. **Permitir múltiplos rótulos:** gêneros, emoções e referências culturais podem coexistir; registrar evidência e confiança para cada um.
+4. **Não inventar contexto:** alegações sobre intenção, cultura, letra ou processo de estúdio exigem fonte ou devem ser marcadas como hipótese.
+5. **Registrar incerteza:** tonalidade ambígua, andamento em meio-tempo/dobro-tempo e estimativas estéreo dependentes do arranjo devem permanecer explicitamente incertos.
+6. **Analisar por seção e globalmente:** preservar tanto o resumo da obra quanto a evolução temporal de cada parâmetro.
+
+A especificação detalhada, incluindo definições operacionais e exemplos de evidência, está em [docs/dimensoes-de-analise-musical.md](docs/dimensoes-de-analise-musical.md).
