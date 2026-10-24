@@ -86,10 +86,10 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
       continue;
     }
     if (audio && id === 'spectrum' && hasValue(audio.spectrum)) {
-      dims[id] = record(id, { summary: audio.spectrum, temporal_curve: audio.spectral_curve ?? [], change_candidates: audio.spectral_change_candidates ?? [] }, 'observed', [
+      dims[id] = record(id, { summary: audio.spectrum, temporal_curve: audio.spectral_curve ?? [], change_candidates: audio.spectral_change_candidates ?? [], novelty_curve: audio.spectral_novelty_curve ?? [], novelty_candidates: audio.spectral_novelty_candidates ?? [], recurrence_candidates: audio.spectral_recurrence_candidates ?? [] }, 'observed', [
         'Descritores espectrais estimados por FFT; mudanças temporais não identificam instrumentos nem provam fronteiras formais.',
         'Entrada de instrumentos, transientes, ruído e mudanças de arranjo podem alterar o centroide e a distribuição por bandas.',
-      ], { unit: 'Hz / proporção de energia / seconds', method: 'windowed FFT spectral descriptors and 1-second temporal summaries', evidence: ['audio_analysis.spectrum', 'audio_analysis.spectral_curve', 'audio_analysis.spectral_change_candidates'], confidence: 0.8 });
+      ], { unit: 'Hz / proporção de energia / seconds', method: 'windowed FFT spectral descriptors and 1-second temporal summaries', evidence: ['audio_analysis.spectrum', 'audio_analysis.spectral_curve', 'audio_analysis.spectral_change_candidates', 'audio_analysis.spectral_novelty_curve', 'audio_analysis.spectral_novelty_candidates', 'audio_analysis.spectral_recurrence_candidates'], confidence: 0.75 });
       continue;
     }
     if (audio && id === 'stereo' && hasValue(audio.stereo)) {
