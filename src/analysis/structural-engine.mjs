@@ -138,7 +138,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     const priorHarmonicEvent=previousIndex>0?events[previousIndex-1]:null;
     const harmonicLabel=sourceEvent=>{
       const raw=sourceEvent?.roman_numeral??sourceEvent?.harmonic_function??sourceEvent?.chord_function??sourceEvent?.harmony_function;
-      return raw==null?null:String(raw).trim().replace(/[\\s₇₆⁷]/g,'').replace(/°/g,'dim').replace(/ø/g,'halfdim');
+      return raw==null?null:String(raw).trim().replace(/[\s₇₆⁷]/g,'').replace(/°/g,'dim').replace(/ø/g,'halfdim');
     };
     const priorFunction=harmonicLabel(priorHarmonicEvent);
     const terminalFunction=harmonicLabel(previous);
