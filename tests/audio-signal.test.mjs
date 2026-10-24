@@ -166,6 +166,10 @@ test('summarizes acoustic features only inside explicitly annotated vocal region
   assert.ok(result.vocal_region_acoustics[0].rms > 0);
   assert.ok(result.vocal_region_acoustics[0].zero_crossing_rate > 0);
   assert.ok(result.vocal_region_acoustics[0].f0_candidate_frame_count > 0);
+  assert.ok(result.vocal_region_acoustics[0].f0_candidate_range_hz.min > 0);
+  assert.ok(result.vocal_region_acoustics[0].f0_candidate_range_hz.max >= result.vocal_region_acoustics[0].f0_candidate_range_hz.min);
+  assert.ok(result.vocal_region_acoustics[0].f0_candidate_frame_coverage > 0);
+  assert.match(result.vocal_region_acoustics[0].limitations[2], /not a singer tessitura estimate/);
   assert.equal(result.vocal_region_acoustics[1].status, 'insufficient_samples');
   assert.match(result.vocal_region_acoustics[0].limitations[0], /não validam que a fonte seja vocal/);
 });
