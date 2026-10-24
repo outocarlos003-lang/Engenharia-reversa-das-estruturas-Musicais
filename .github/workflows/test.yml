@@ -1,10 +1,26 @@
-name: SUNO Prompt Validation
+name: Test
 on:
   push:
+    branches: [main, "feat/**"]
+  pull_request:
 jobs:
-  validate:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate prompt limit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify SUNO protocol exists
+        run: test -s SUNO_PROMPT_PROTOCOL.md
+      - name: Accept prompt within the 850-character limit
         run: node scripts/validate-suno-prompt.mjs "Prompt de teste: piano, voz suave e crescendo cinematográfico."
+      - name: Reject prompt above the 850-character limit
+        shell: bash
+        run: |
+          prompt=$(node -e "process.stdout.write('x'.repeat(851))")
+          if node scripts/validate-suno-prompt.mjs "$prompt"; then
+            echo "ERROR: 851-character prompt was accepted"
+            exit 1
+          fi
+          echo "OK: 851-character prompt rejected"
