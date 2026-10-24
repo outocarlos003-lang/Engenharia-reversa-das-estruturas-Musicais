@@ -1,6 +1,5 @@
 /**
  * Structural inference from symbolic musical events.
- * This module intentionally works on events, not audio-container metadata.
  * Time values are in beats unless the caller explicitly supplies another unit.
  */
 
