@@ -102,11 +102,14 @@ src/analysis/structural-engine.mjs implementa uma primeira camada de inferência
 
 - compara janelas de eventos por contorno melódico e intervalos entre ataques normalizados;
 - identifica motivos recorrentes mesmo quando aparecem transpostos;
+- relaciona ocorrências por transposição, inversão, retrogradação e retrogradação invertida;
+- detecta aumentação e diminuição rítmica quando as proporções entre ataques permanecem consistentes;
+- inclui as relações de transformação no relatório canônico e nas respostas MCP de análise de motivos e estrutura melódica;
 - organiza eventos em frases provisórias, associa recorrências a seções e deriva uma sequência formal relacional;
 - separa observações, inferências e questões ainda não resolvidas;
 - registra confiança e limitações, sem apresentar limites de frase/seção como verdades definitivas.
 
-O motor aceita eventos com start ou onset, duration e pitch ou midi. O tempo deve estar numa unidade consistente, preferencialmente pulsos musicais. A inferência de frases e seções é uma hipótese inicial e ainda precisa ser fortalecida com cadências, hierarquia métrica, vozes simultâneas e validação contra partituras ou anotações de referência.
+O motor aceita eventos com start ou onset, duration e pitch ou midi. O tempo deve estar numa unidade consistente, preferencialmente pulsos musicais. A inferência de frases e seções é uma hipótese inicial e ainda precisa ser fortalecida com cadências, hierarquia métrica, vozes simultâneas e validação contra partituras ou anotações de referência. As transformações são relações matemáticas entre sequências simbólicas; não provam, isoladamente, função formal ou intenção composicional.
 
 ## Estado atual e limitações
 
