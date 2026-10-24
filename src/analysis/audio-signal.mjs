@@ -525,6 +525,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
       channel_count: channelSamples.length,
     };
   }
+  const fundamentalFrequencyTrack = estimateFundamentalFrequencyTrack(mono, sampleRate);
   return {
     method: 'normalized PCM sample analysis; peak/RMS in dBFS; spectral descriptors from windowed FFT',
     duration_seconds: Number((frameCount / sampleRate).toFixed(6)),
@@ -547,8 +548,8 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     spectral_recurrence_candidates: spectralNoveltyResult.recurrence_candidates,
     spectral_sequence_recurrence_candidates: spectralNoveltyResult.sequence_recurrence_candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
-    fundamental_frequency_track: estimateFundamentalFrequencyTrack(mono, sampleRate),
-    vocal_region_acoustics: summarizeVocalRegions(mono, sampleRate, vocalRegions, estimateFundamentalFrequencyTrack(mono, sampleRate)),
+    fundamental_frequency_track: fundamentalFrequencyTrack,
+    vocal_region_acoustics: summarizeVocalRegions(mono, sampleRate, vocalRegions, fundamentalFrequencyTrack),
     stereo,
     limitations: [
       'Input must already be decoded to normalized PCM samples; file/container reading and decoding are not included.',
