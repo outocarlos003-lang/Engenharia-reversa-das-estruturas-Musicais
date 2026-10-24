@@ -2,7 +2,15 @@ name: Test
 on:
   push:
     branches: [main, "feat/**"]
+    paths-ignore:
+      - 'SUNO_PROMPT_PROTOCOL.md'
+      - 'scripts/validate-suno-prompt.mjs'
+      - '.github/workflows/suno-prompt-validation.yml'
   pull_request:
+    paths-ignore:
+      - 'SUNO_PROMPT_PROTOCOL.md'
+      - 'scripts/validate-suno-prompt.mjs'
+      - '.github/workflows/suno-prompt-validation.yml'
 jobs:
   test:
     runs-on: ubuntu-latest
