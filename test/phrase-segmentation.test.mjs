@@ -14,7 +14,9 @@ test('infers phrase boundary from a substantial rest instead of only fixed event
   const result=inferMusicalStructure(events,{phraseBoundaryMinGap:1,phraseBoundaryGapRatio:2,maxPhraseEvents:16});
   assert.equal(result.phrases.length,2);
   assert.equal(result.phrases[1].boundary_reason,'inter_phrase_gap');
-  assert.equal(result.phrases[1].boundary_status,'inferred');
+  assert.equal(result.phrases[1].boundary_status,'supported');
+  assert.equal(result.phrases[1].evidence.classification,'supported');
+  assert.ok(result.phrases[1].evidence.score>=0.75);
   assert.equal(result.phrases[1].evidence.measured_gap_before,3.5);
 });
 
@@ -28,7 +30,7 @@ test('honors source-declared phrase boundaries',()=>{
   const result=inferMusicalStructure(events,{maxPhraseEvents:16});
   assert.equal(result.phrases.length,2);
   assert.equal(result.phrases[1].boundary_reason,'source_phrase_id_change');
-  assert.equal(result.phrases[1].confidence,0.9);
+  assert.equal(result.phrases[1].confidence,0.95);
 });
 
 test('uses maximum phrase size only as a safety cap when no stronger boundary exists',()=>{
@@ -36,4 +38,26 @@ test('uses maximum phrase size only as a safety cap when no stronger boundary ex
   const result=inferMusicalStructure(events,{maxPhraseEvents:2,phraseBoundaryGapRatio:10,phraseBoundaryMinGap:10});
   assert.deepEqual(result.phrases.map(p=>p.event_ids.length),[2,2,1]);
   assert.equal(result.phrases[0].boundary_reason,'safety_cap');
+});
+
+test('combines a moderate rest with supplied metrical accent and records each evidence source',()=>{
+  const events=[
+    {id:'a',start:0,duration:0.5,pitch:60},
+    {id:'b',start:0.5,duration:0.5,pitch:62},
+    {id:'c',start:1.5,duration:0.5,pitch:64,metrical_strength:0.8},
+    {id:'d',start:2,duration:0.5,pitch:65},
+  ];
+  const result=inferMusicalStructure(events,{phraseBoundaryMinGap:0.5,phraseBoundaryGapRatio:1.25,maxPhraseEvents:16});
+  assert.equal(result.phrases.length,2);
+  const boundary=result.phrases[1].evidence;
+  assert.ok(boundary.evidence.some(item=>item.type==='inter_event_rest'));
+  assert.ok(boundary.evidence.some(item=>item.type==='metrical_accent'));
+  assert.equal(boundary.classification,'supported');
+});
+
+test('records an end-of-source boundary as unresolved rather than claiming a cadence',()=>{
+  const result=inferMusicalStructure([{start:0,duration:1,pitch:60},{start:1,duration:1,pitch:62}]);
+  assert.equal(result.phrases[0].boundary_reason,'end_of_source');
+  assert.equal(result.phrases[0].boundary_status,'provisional');
+  assert.equal(result.phrases[0].evidence.classification,'insufficient');
 });
