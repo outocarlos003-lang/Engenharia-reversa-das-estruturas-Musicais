@@ -46,6 +46,32 @@ test('Suno client sends custom generation and quota requests to configured self-
   assert.equal(calls[1].url, 'http://localhost:3000/api/get_limit');
 });
 
+test('waits for generated audio and reports terminal failures', async () => {
+  let calls = 0;
+  const client = new SunoApiClient({
+    baseUrl: 'http://localhost:3000',
+    fetchImpl: async () => {
+      calls += 1;
+      const payload = calls === 1
+        ? [{ id: 'clip-1', status: 'streaming' }]
+        : [{ id: 'clip-1', status: 'complete', audio_url: 'https://example.invalid/audio.mp3' }];
+      return { ok: true, status: 200, statusText: 'OK', text: async () => JSON.stringify(payload) };
+    },
+  });
+  const result = await client.waitForAudio(['clip-1'], { intervalMs: 0, timeoutMs: 1000 });
+  assert.equal(calls, 2);
+  assert.equal(result[0].audio_url, 'https://example.invalid/audio.mp3');
+
+  const failedClient = new SunoApiClient({
+    baseUrl: 'http://localhost:3000',
+    fetchImpl: async () => ({
+      ok: true, status: 200, statusText: 'OK',
+      text: async () => JSON.stringify([{ id: 'clip-x', status: 'failed', error_message: 'generation rejected' }]),
+    }),
+  });
+  await assert.rejects(failedClient.waitForAudio(['clip-x'], { intervalMs: 0, timeoutMs: 1000 }), /generation failed/);
+});
+
 test('Suno client validates input and surfaces HTTP errors', async () => {
   assert.throws(() => new SunoApiClient({ baseUrl: '' }), /SUNO_API_BASE_URL/);
   const client = new SunoApiClient({
