@@ -17,7 +17,7 @@ export function buildTrackProfile(source = {}, computed = {}) {
   const culturalContext = first(profile.cultural_context, source.cultural_context, source.culture, annotations.cultural_context);
   const primaryGenres = list(first(profile.genres?.primary, source.genres?.primary, source.primary_genres, source.genre));
   const secondaryGenres = list(first(profile.genres?.secondary, source.genres?.secondary, source.secondary_genres));
-  const tempo = first(suppliedFeatures.tempo, source.tempo, computed.tempo);
+  const tempo = first(suppliedFeatures.tempo, source.tempo?.bpm, source.tempo, computed.tempo);
   const key = first(suppliedFeatures.key, source.key, source.tonal_center, source.harmony?.key);
   const loudness = first(suppliedFeatures.loudness, source.loudness, source.dynamics?.loudness);
   const energyStructure = first(suppliedFeatures.energy_structure, source.energy_structure, source.dynamics?.energy_structure, source.dynamics?.energy_curve);
