@@ -138,6 +138,37 @@ export class SunoApiClient {
     return this.request('/api/get_limit');
   }
 
+  async waitForAudio(ids, { intervalMs = 3000, timeoutMs = 180000 } = {}) {
+    if (!Array.isArray(ids) || ids.length === 0 || ids.some(id => typeof id !== 'string' || !id.trim())) {
+      throw new TypeError('ids must be a non-empty array of non-empty strings');
+    }
+    if (!Number.isFinite(intervalMs) || intervalMs < 0 || !Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+      throw new TypeError('intervalMs must be non-negative and timeoutMs must be positive');
+    }
+    const deadline = Date.now() + timeoutMs;
+    while (true) {
+      const result = await this.getAudio(ids);
+      const records = Array.isArray(result) ? result
+        : Array.isArray(result?.data) ? result.data
+        : Array.isArray(result?.clips) ? result.clips
+        : result && typeof result === 'object' ? [result] : [];
+      const byId = new Map(records.map(record => [String(record.id ?? record.audio_id ?? ''), record]));
+      const matched = ids.map(id => byId.get(id)).filter(Boolean);
+      const failed = matched.find(record => /^(failed|error|cancelled|canceled)$/i.test(String(record.status ?? record.state ?? '')));
+      if (failed) throw new Error(`Suno generation failed for ${failed.id ?? failed.audio_id}: ${failed.error_message ?? failed.error ?? failed.status}`);
+      const ready = ids.every(id => {
+        const record = byId.get(id);
+        if (!record) return false;
+        const status = String(record.status ?? record.state ?? '').toLowerCase();
+        return Boolean(record.audio_url ?? record.audioUrl ?? record.stream_url) ||
+          ['complete', 'completed', 'success', 'succeeded'].includes(status);
+      });
+      if (ready) return ids.map(id => byId.get(id));
+      if (Date.now() >= deadline) throw new Error(`Timed out waiting for Suno audio: ${ids.filter(id => !byId.has(id)).join(', ') || 'generation incomplete'}`);
+      await new Promise(resolve => setTimeout(resolve, Math.min(intervalMs, Math.max(0, deadline - Date.now()))));
+    }
+  }
+
   extendAudio({ audioId, prompt = '', continueAt, title = '', tags = '', negativeTags = '', model = DEFAULT_MODEL } = {}) {
     if (typeof audioId !== 'string' || !audioId.trim()) throw new TypeError('audioId is required');
     return this.request('/api/extend_audio', {
