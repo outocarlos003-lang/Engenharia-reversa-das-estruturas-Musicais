@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "erm://schemas/reconstruction.schema.json",
+  "title": "ERM Reconstruction Specification",
+  "type": "object",
+  "required": ["schema_version", "timing", "arrangement", "constraints"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "source": {"type": ["string", "null"]},
+    "timing": {"type": "object"},
+    "harmony": {"type": "object"},
+    "arrangement": {"type": "array"},
+    "motifs": {"type": "array"},
+    "instrumentation": {"type": "object"},
+    "dynamics": {"type": "object"},
+    "stereo": {"type": "object"},
+    "aesthetics": {"type": "object"},
+    "constraints": {"type": "array", "items": {"type": "string"}}
+  }
+}
