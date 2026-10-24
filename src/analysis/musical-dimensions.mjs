@@ -79,10 +79,10 @@ export function buildMusicalDimensions(source = {}, representation = {}) {
       continue;
     }
     if (audio && id === 'energy_structure') {
-      dims[id] = record(id, { curve: audio.energy_curve, section_candidates: audio.section_candidates ?? [] }, 'observed', [
+      dims[id] = record(id, { curve: audio.energy_curve, section_candidates: audio.section_candidates ?? [], combined_transition_candidates: audio.combined_transition_candidates ?? [] }, 'observed', [
         'Curva calculada por janelas de RMS de 100 ms; transições são candidatas baseadas em mudanças de nível, não fronteiras musicais confirmadas.',
         'Variações de masterização, dinâmica, pausas ou eventos isolados podem gerar candidatos; a detecção não classifica verso, refrão ou ponte.',
-      ], { unit: 'RMS / dBFS / seconds', method: 'RMS por janela de 100 ms e detector heurístico de mudanças entre bins de 1 s', evidence: ['audio_analysis.energy_curve', 'audio_analysis.section_candidates'], confidence: 0.75 });
+      ], { unit: 'RMS / dBFS / seconds', method: 'RMS por janela de 100 ms e detector heurístico de mudanças entre bins de 1 s', evidence: ['audio_analysis.energy_curve', 'audio_analysis.section_candidates', 'audio_analysis.combined_transition_candidates'], confidence: 0.75 });
       continue;
     }
     if (audio && id === 'spectrum' && hasValue(audio.spectrum)) {
