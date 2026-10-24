@@ -56,3 +56,31 @@ test('WAV analysis reports loudness proxies and spectral descriptors',()=>{
   assert.ok(result.spectrum.flatness>=0);
   assert.equal(result.spectrum.method.includes('256-point'),true);
 });
+
+function stereoWav({duration=1,sampleRate=8000,frequency=440,leftAmplitude=0.5,rightAmplitude=0.25}={}) {
+  const count=Math.floor(duration*sampleRate), dataSize=count*4, b=Buffer.alloc(44+dataSize);
+  b.write('RIFF',0); b.writeUInt32LE(36+dataSize,4); b.write('WAVE',8);
+  b.write('fmt ',12); b.writeUInt32LE(16,16); b.writeUInt16LE(1,20); b.writeUInt16LE(2,22);
+  b.writeUInt32LE(sampleRate,24); b.writeUInt32LE(sampleRate*4,28); b.writeUInt16LE(4,32); b.writeUInt16LE(16,34);
+  b.write('data',36); b.writeUInt32LE(dataSize,40);
+  for(let i=0;i<count;i++) {
+    b.writeInt16LE(Math.round(Math.sin(2*Math.PI*frequency*i/sampleRate)*leftAmplitude*32767),44+i*4);
+    b.writeInt16LE(Math.round(Math.sin(2*Math.PI*frequency*i/sampleRate)*rightAmplitude*32767),46+i*4);
+  }
+  return b;
+}
+
+test('stereo analysis measures channel correlation, width and level balance',()=>{
+  const result=analyzeWavBuffer(stereoWav());
+  assert.equal(result.stereo.status,'measured');
+  assert.equal(result.stereo.channel_count,2);
+  assert.ok(result.stereo.interchannel_correlation>0.99);
+  assert.ok(result.stereo.stereo_width>0);
+  assert.ok(result.stereo.left_right_rms_db>5 && result.stereo.left_right_rms_db<7);
+});
+
+test('mono analysis marks stereo metrics unavailable',()=>{
+  const result=analyzeWavBuffer(sineWav());
+  assert.equal(result.stereo.status,'mono_or_unavailable');
+  assert.equal(result.stereo.stereo_width,null);
+});
