@@ -138,14 +138,14 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     const priorHarmonicEvent=previousIndex>0?events[previousIndex-1]:null;
     const harmonicLabel=sourceEvent=>{
       const raw=sourceEvent?.roman_numeral??sourceEvent?.harmonic_function??sourceEvent?.chord_function??sourceEvent?.harmony_function;
-      return raw==null?null:String(raw).toLowerCase().replace(/[\\s₇₆⁷]/g,'').replace(/°/g,'dim').replace(/ø/g,'halfdim');
+      return raw==null?null:String(raw).trim().replace(/[\\s₇₆⁷]/g,'').replace(/°/g,'dim').replace(/ø/g,'halfdim');
     };
     const priorFunction=harmonicLabel(priorHarmonicEvent);
     const terminalFunction=harmonicLabel(previous);
     const cadencePairs=[
-      {from:/^(v|v7|v9|v11|v13|dominant)$/,to:/^(i|i6|i64|tonic|tonicmajor|tonicminor|i:maj|i:min)$/ ,label:'dominant_to_tonic'},
-      {from:/^(viidim|viidim7|viihalfdim7|leadingtone|leadingtoneseventh)$/,to:/^(i|i6|i64|tonic|tonicmajor|tonicminor|i:maj|i:min)$/,label:'leading_tone_to_tonic'},
-      {from:/^(iv|iv7|subdominant)$/,to:/^(i|tonic|tonicmajor|tonicminor)$/,label:'subdominant_to_tonic'},
+      {from:/^(V|V7|V9|V11|V13|dominant|dominant7)$/i,to:/^(I|i|I6|i6|I64|i64|tonic|tonicmajor|tonicminor|I:maj|i:maj|I:min|i:min)$/ ,label:'dominant_to_tonic'},
+      {from:/^(vii°|vii°7|viiø7|leadingtone|leadingtoneseventh)$/i,to:/^(I|i|I6|i6|I64|i64|tonic|tonicmajor|tonicminor|I:maj|i:maj|I:min|i:min)$/i,label:'leading_tone_to_tonic'},
+      {from:/^(IV|IV7|subdominant)$/i,to:/^(I|i|tonic|tonicmajor|tonicminor)$/i,label:'subdominant_to_tonic'},
     ];
     const cadence=cadencePairs.find(pair=>pair.from.test(priorFunction??'')&&pair.to.test(terminalFunction??''));
     if(cadence){
