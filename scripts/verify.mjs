@@ -36,7 +36,7 @@ if (!failed) {
 }
 
 function run(command, args, label) {
-  console.log(`\\n> ${label}`);
+  console.log(`\n> ${label}`);
   const result = spawnSync(command, args, { stdio: "inherit", shell: process.platform === "win32" });
   if (result.error) {
     console.error(result.error.message);
@@ -55,7 +55,7 @@ if (!failed) {
 }
 
 if (failed) {
-  console.error("\\nVERIFICAÇÃO FALHOU. Corrija os itens acima e execute npm run verify novamente.");
+  console.error("\nVERIFICAÇÃO FALHOU. Corrija os itens acima e execute npm run verify novamente.");
   process.exit(1);
 }
-console.log("\\nVERIFICAÇÃO CONCLUÍDA COM SUCESSO.");
+console.log("\nVERIFICAÇÃO CONCLUÍDA COM SUCESSO.");
