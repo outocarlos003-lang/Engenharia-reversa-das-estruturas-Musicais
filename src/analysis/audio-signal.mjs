@@ -309,6 +309,63 @@ function estimateFundamentalFrequencyTrack(mono, sampleRate) {
   return track;
 }
 
+function summarizeVocalRegions(mono, sampleRate, regions, f0Track) {
+  if (!Array.isArray(regions)) return [];
+  return regions.filter(region =>
+    region && Number.isFinite(region.start_seconds) && Number.isFinite(region.end_seconds) &&
+    region.start_seconds >= 0 && region.end_seconds > region.start_seconds
+  ).map((region, index) => {
+    const start = Math.min(mono.length, Math.floor(region.start_seconds * sampleRate));
+    const end = Math.min(mono.length, Math.floor(region.end_seconds * sampleRate));
+    const samples = mono.slice(start, end);
+    if (samples.length < 2) return {
+      region_index: index,
+      start_seconds: region.start_seconds,
+      end_seconds: region.end_seconds,
+      status: 'insufficient_samples',
+      sample_count: samples.length,
+      rms: null,
+      rms_dbfs: null,
+      zero_crossing_rate: null,
+      f0_summary_hz: null,
+      limitations: ['A região está fora do áudio disponível ou contém amostras insuficientes.'],
+    };
+    const squareMean = samples.reduce((sum, value) => sum + value * value, 0) / samples.length;
+    let crossings = 0;
+    for (let i = 1; i < samples.length; i++) {
+      if ((samples[i - 1] < 0 && samples[i] >= 0) || (samples[i - 1] >= 0 && samples[i] < 0)) crossings++;
+    }
+    const regionF0 = f0Track.filter(frame =>
+      frame.time_seconds >= region.start_seconds && frame.time_seconds < region.end_seconds &&
+      Number.isFinite(frame.f0_hz) && frame.status === 'candidate_periodic_f0'
+    ).map(frame => frame.f0_hz).sort((a, b) => a - b);
+    const medianF0 = regionF0.length
+      ? Number(regionF0[Math.floor(regionF0.length / 2)].toFixed(2))
+      : null;
+    return {
+      region_index: index,
+      start_seconds: region.start_seconds,
+      end_seconds: region.end_seconds,
+      annotation: region.annotation ?? 'vocal_region',
+      annotation_source: region.source ?? 'source annotation',
+      sample_count: samples.length,
+      rms: Number(Math.sqrt(squareMean).toFixed(6)),
+      rms_dbfs: dbfs(Math.sqrt(squareMean)),
+      zero_crossing_rate: Number((crossings / (samples.length - 1)).toFixed(6)),
+      f0_summary_hz: medianF0,
+      f0_candidate_frame_count: regionF0.length,
+      status: 'acoustic_summary_for_annotated_region',
+      method: 'RMS, zero-crossing rate, and median of candidate autocorrelation F0 frames within annotated interval',
+      limitations: [
+        'Features are computed only because an input annotation marked this interval; they do not validate that the source is vocal.',
+        'RMS and zero-crossing rate are generic acoustic descriptors, not voice-specific measures.',
+        'F0 summary includes only candidate periodic frames and may track instruments, harmonics, or octave errors.',
+        'Formants, phonation type, and vocal technique are not estimated.',
+      ],
+    };
+  });
+}
+
 function spectralFeatures(mono, sampleRate, frameSize) {
   const n = Math.min(frameSize, 2 ** Math.floor(Math.log2(mono.length)));
   if (n < 32) return { centroid_hz: null, rolloff_85_hz: null, flatness: null, low_mid_high_energy: null };
@@ -428,7 +485,7 @@ function estimateTonalCenter(mono, sampleRate, frameSize) {
  * Analyze already-decoded, normalized PCM samples. This function does not read
  * files or decode WAV/MP3/other containers. Samples should be floats in [-1, 1].
  */
-export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSize = DEFAULT_FRAME_SIZE } = {}) {
+export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSize = DEFAULT_FRAME_SIZE, vocalRegions = [] } = {}) {
   if (!Number.isFinite(sampleRate) || sampleRate < 1) throw new Error('sampleRate must be a positive number');
   if (!Number.isInteger(frameSize) || frameSize < 32 || (frameSize & (frameSize - 1)) !== 0) throw new Error('frameSize must be a power of two >= 32');
   const channelSamples = normalizeChannels(samples, channels);
@@ -491,6 +548,7 @@ export function analyzeAudioSamples({ samples, sampleRate, channels = 1, frameSi
     spectral_sequence_recurrence_candidates: spectralNoveltyResult.sequence_recurrence_candidates,
     tonal_center: estimateTonalCenter(mono, sampleRate, frameSize),
     fundamental_frequency_track: estimateFundamentalFrequencyTrack(mono, sampleRate),
+    vocal_region_acoustics: summarizeVocalRegions(mono, sampleRate, vocalRegions, estimateFundamentalFrequencyTrack(mono, sampleRate)),
     stereo,
     limitations: [
       'Input must already be decoded to normalized PCM samples; file/container reading and decoding are not included.',
