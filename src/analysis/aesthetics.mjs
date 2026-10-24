@@ -12,9 +12,10 @@ export function analyzeAesthetics(representation = {}) {
   const contrasts = sections.map(section => Number(section.contrast)).filter(Number.isFinite);
   const densities = sections.map(section => Number(section.density)).filter(Number.isFinite);
 
-  const dynamicMean = mean(dynamics.map(item => Number(item.value)).filter(Number.isFinite));
-  const contrastMean = mean(contrasts);
-  const densityMean = mean(densities);
+  const roundedMean = values => { const value = mean(values); return value === null ? null : Number(value.toFixed(12)); };
+  const dynamicMean = roundedMean(dynamics.map(item => Number(item.value)).filter(Number.isFinite));
+  const contrastMean = roundedMean(contrasts);
+  const densityMean = roundedMean(densities);
 
   const dimensions = {
     contrast: contrastMean,

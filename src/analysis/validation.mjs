@@ -48,7 +48,7 @@ export function validateMusicalReport(report = {}) {
     checks: {
       evidence_confidence: confidenceValues.length > 0 || (report.observations ?? []).length === 0,
       reconstruction_shape: report.reconstruction == null || REQUIRED_RECONSTRUCTION_KEYS.every(key => key in report.reconstruction),
-      composition_first: !('artifact' in report) && !('format' in (report.representation ?? {})),
+      structural_focus: Array.isArray(report.events) && Array.isArray(report.sections),
     },
   };
 }

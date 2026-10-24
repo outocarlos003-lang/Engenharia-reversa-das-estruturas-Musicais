@@ -48,8 +48,8 @@ export function inferForm(sections = []) {
 }
 
 export function compareForm(reference, candidate) {
-  const a = reference?.sequence ?? [];
-  const b = candidate?.sequence ?? [];
+  const a = reference?.sections?.map(section => section.signature ?? section.label ?? section.form_label) ?? reference?.sequence ?? [];
+  const b = candidate?.sections?.map(section => section.signature ?? section.label ?? section.form_label) ?? candidate?.sequence ?? [];
   const length = Math.max(a.length, b.length);
   if (!length) return { similarity: null, aligned: [] };
 

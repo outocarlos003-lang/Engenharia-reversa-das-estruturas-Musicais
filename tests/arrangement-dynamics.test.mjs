@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { analyzeArrangement } from '../src/analysis/arrangement.mjs';
 import { analyzeDynamics } from '../src/analysis/dynamics.mjs';
 
-test('arrangement analysis measures structural layers without file metadata', () => {
+test('arrangement analysis measures structural layers', () => {
   const result = analyzeArrangement({
     instrumentation: {
       bass: [{ start: 0, end: 8 }],

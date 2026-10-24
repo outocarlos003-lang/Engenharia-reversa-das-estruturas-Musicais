@@ -1,59 +1,39 @@
-# ERM MCP Contracts
+# Contratos MCP do ERM
 
-O ERM usa o mesmo princípio de catálogo de ferramentas do REA: cada operação tem uma responsabilidade investigativa delimitada e deve produzir resultados auditáveis.
+O catálogo expõe operações delimitadas para investigar uma representação musical e devolver resultados rastreáveis.
 
-## Artifact
+## Tempo e ritmo
 
-`inspect_audio_artifact`
+`detect_tempo_meter`, `analyze_rhythmic_structure`
 
-Retorna formato, duração, canais, sample rate, bit depth quando disponível, hashes e limitações do arquivo.
+Investiga andamento, métrica, grade temporal e padrões rítmicos a partir dos eventos fornecidos.
 
-## Signal
+## Harmonia e melodia
 
-`extract_audio_features`
+`estimate_harmonic_center`, `analyze_harmonic_structure`, `analyze_melodic_structure`
 
-Extrai RMS/LUFS quando suportado, crest factor, centroid, rolloff, flux, zero crossing, energia por banda, correlação e largura estéreo.
+Descreve relações tonais e melódicas sustentadas pelos dados disponíveis, registrando incertezas.
 
-## Time / rhythm
+## Eventos e estrutura
 
-`detect_tempo_meter`, `detect_events`
+`detect_musical_events`, `segment_music`, `find_repeated_sections`, `analyze_motifs`
 
-Investiga BPM, compasso provável, grade temporal, ataques, transientes e padrões rítmicos.
+Constrói a hierarquia evento → motivo → frase → seção → forma, com fronteiras provisórias e evidências.
 
-## Harmony
+## Arranjo e dinâmica musical
 
-`estimate_harmonic_center`
+`analyze_instrument_layers`, `analyze_dynamics`, `analyze_spatial_structure`
 
-Estima centro tonal, modo, classes de altura, estabilidade e mudanças harmônicas. Deve registrar ambiguidade.
+Descreve camadas funcionais, densidade, dinâmica e distribuição espacial quando essas relações estão representadas na fonte.
 
-## Structure
-
-`segment_music`, `find_repeated_sections`, `analyze_motifs`
-
-Constrói a hierarquia evento → motivo → seção → forma, com fronteiras e confiança.
-
-## Arrangement / production
-
-`analyze_instrument_layers`, `analyze_dynamics`, `analyze_stereo`
-
-Descreve camadas funcionais, densidade, dinâmica, panorama, largura e evolução de produção.
-
-## Semantics
+## Interpretação
 
 `classify_genre`, `analyze_aesthetics`
 
-Gera classificações como inferências interpretáveis. Nunca deve apresentar gênero ou estética como uma medição física.
+Apresenta hipóteses interpretativas sem confundi-las com observações estruturais.
 
-## Reconstruction
+## Reconstrução e validação
 
-`build_reconstruction_spec`
+`build_reconstruction_spec`, `compare_reconstructions`, `explain_evidence`
 
-Converte os achados em uma especificação independente do DAW, preservando forma, relações temporais, funções instrumentais, dinâmica e restrições.
-
-`compare_reconstructions`
-
-Compara uma referência e uma reconstrução por métricas estruturais e registra desvios.
-
-`explain_evidence`
-
-Explica quais observações sustentaram uma conclusão e quais pontos permanecem incertos.
+Produz uma especificação estrutural, compara sequências musicais e explica quais observações sustentam cada conclusão.

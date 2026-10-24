@@ -2,25 +2,24 @@
 
 ## Goal
 
-Investigate a supplied audio artifact as a reverse-engineering target. Do not start by naming a genre. Start with artifact facts and measurable signal features, then infer structure and semantics.
+Investigate a symbolic musical representation. Begin with events and their relationships, not with genre labels.
 
 ## Required workflow
 
-1. Inspect the artifact.
-2. Extract signal features.
-3. Estimate tempo and meter.
-4. Estimate harmonic center and uncertainty.
-5. Detect events and repeated material.
-6. Segment the track hierarchically.
-7. Analyze motifs and instrument layers.
-8. Analyze dynamics and stereo behavior.
-9. Infer genres/subgenres with evidence.
-10. Infer aesthetics and production language.
-11. Produce a reconstruction specification.
-12. Preserve evidence and limitations for every important conclusion.
+1. Validate the supplied musical events.
+2. Establish event order, onset, duration and pitch where available.
+3. Analyze tempo, meter and rhythmic patterns.
+4. Describe melodic intervals and contour.
+5. Examine harmonic relationships only when supported by supplied material.
+6. Detect recurring motifs and their transformations.
+7. Infer provisional phrases and sections.
+8. Derive the larger formal sequence.
+9. Describe arrangement, dynamics and spatial relationships only when represented musically.
+10. Produce a reconstruction specification.
+11. Preserve evidence, uncertainty and unresolved questions.
 
 ## Evidence discipline
 
-Use `measured` for direct observations, `inferred` for analytical conclusions and `interpreted` for semantic/aesthetic judgments.
+Use `measured` for direct observations, `inferred` for analytical conclusions and `interpreted` for semantic or aesthetic judgments.
 
-Never use a previous user's audio as a built-in fixture. Test analyzers with synthetic or separately licensed fixtures.
+Never use a previous user's material as a built-in fixture. Test analyzers with synthetic or separately licensed musical examples.

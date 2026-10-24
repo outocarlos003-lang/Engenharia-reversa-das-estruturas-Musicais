@@ -27,7 +27,7 @@ test('validation accepts a complete composition-first report', () => {
   });
 
   assert.equal(result.valid, true);
-  assert.equal(result.checks.composition_first, true);
+  assert.equal(result.checks.structural_focus, true);
 });
 
 test('validation rejects confidence outside epistemic range', () => {
@@ -42,18 +42,4 @@ test('validation rejects confidence outside epistemic range', () => {
 
   assert.equal(result.valid, false);
   assert.match(result.errors[0], /between 0 and 1/);
-});
-
-test('validation rejects file-format concepts at report level', () => {
-  const result = validateMusicalReport({
-    target: 'synthetic-source',
-    artifact: { format: 'wav' },
-    representation: { format: 'wav', events: [] },
-    events: [],
-    motifs: [],
-    sections: [],
-    form: [],
-  });
-
-  assert.equal(result.checks.composition_first, false);
 });

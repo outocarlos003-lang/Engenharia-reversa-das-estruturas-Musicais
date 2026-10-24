@@ -40,7 +40,6 @@ export function buildReconstructionSpec(input = {}) {
       'Keep measured facts separate from inferred musical labels.',
       'Record uncertainty for ambiguous boundaries or harmonic estimates.',
       'Treat genre, aesthetics and semantic cues as hypotheses rather than construction rules.',
-      'Do not require a specific file format for reconstruction.',
     ],
     validation: {
       required_layers: ['timing', 'events', 'sections', 'form'],

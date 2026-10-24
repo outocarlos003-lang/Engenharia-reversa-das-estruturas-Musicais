@@ -34,10 +34,8 @@ test('default pipeline executes the complete structural chain', async () => {
   assert.equal(report.validation.valid, true);
 });
 
-test('default pipeline never introduces a file-format model layer', async () => {
+test('default pipeline preserves the structural representation', async () => {
   const report = await createDefaultPipeline().analyze({ source: 'synthetic' });
 
-  assert.equal(Object.hasOwn(report, 'artifact'), false);
-  assert.equal(Object.hasOwn(report.representation, 'format'), false);
-  assert.equal(Object.hasOwn(report.representation, 'codec'), false);
+  assert.ok(Array.isArray(report.representation.events));
 });
