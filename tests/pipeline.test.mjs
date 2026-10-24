@@ -9,7 +9,7 @@ import { classifyGenre } from '../src/analysis/genre.mjs';
 import { analyzeAesthetics } from '../src/analysis/aesthetics.mjs';
 import { buildReconstructionSpec } from '../src/analysis/reconstruction.mjs';
 
-test('pipeline integrates musical reconstruction stages without file-format analysis', async () => {
+test('pipeline integrates musical reconstruction stages', async () => {
   const pipeline = createPipeline({
     analyzers: {
       representation: () => createMusicalRepresentation({
@@ -54,8 +54,6 @@ test('pipeline integrates musical reconstruction stages without file-format anal
   assert.equal(report.form.pattern, 'A-B-A');
   assert.ok(Array.isArray(report.genre));
   assert.equal(report.reconstruction.timing.bpm, 120);
-  assert.equal(Object.hasOwn(report, 'artifact'), false);
-  assert.equal(Object.hasOwn(report.representation, 'format'), false);
 });
 
 test('pipeline remains safe when optional analyzers are absent', async () => {
