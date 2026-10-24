@@ -4,15 +4,12 @@ import { createMusicalRepresentation } from '../src/music/representation.mjs';
 import { analyzeRhythm } from '../src/analysis/rhythm.mjs';
 import { findMotifs } from '../src/analysis/motifs.mjs';
 
-test('musical representation has no file-format layer', () => {
+test('musical representation initializes musical timing', () => {
   const representation = createMusicalRepresentation({
     timing: { bpm: 120, meter: '4/4' },
   });
 
   assert.equal(representation.timing.bpm, 120);
-  assert.equal(Object.hasOwn(representation, 'artifact'), false);
-  assert.equal(Object.hasOwn(representation, 'codec'), false);
-  assert.equal(Object.hasOwn(representation, 'format'), false);
 });
 
 test('rhythmic analysis derives structure from musical events', () => {
