@@ -14,9 +14,6 @@
     "phrases": {"type": "array"},
     "sections": {"type": "array"},
     "form": {"type": "array"},
-    "genre": {"type": "array"},
-    "aesthetics": {"type": "object"},
-    "production": {"type": "object"},
     "reconstruction": {"type": ["object", "null"]},
     "limitations": {"type": "array", "items": {"type": "string"}}
   },
