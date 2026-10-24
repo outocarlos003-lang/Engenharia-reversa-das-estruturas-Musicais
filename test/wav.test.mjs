@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeWavBuffer, decodeWav } from '../src/audio/wav.mjs';
+import { analyzeWavBuffer, decodeWav, estimatePitch } from '../src/audio/wav.mjs';
 
 function sineWav({duration=1,sampleRate=8000,frequency=440,amplitude=0.5}={}) {
   const count=Math.floor(duration*sampleRate), dataSize=count*2, b=Buffer.alloc(44+dataSize);
@@ -30,4 +30,19 @@ test('WAV analysis returns measurable frames and documented limits',()=>{
 
 test('rejects non-WAV binary input',()=>{
   assert.throws(()=>decodeWav(Buffer.from('not audio')),/valid RIFF\/WAVE/);
+});
+
+test('estimates pitch for a clean monophonic A4 tone',()=>{
+  const rate=8000, count=4000, samples=new Float32Array(count);
+  for(let i=0;i<count;i++) samples[i]=0.6*Math.sin(2*Math.PI*440*i/rate);
+  const pitch=estimatePitch(samples,rate);
+  assert.ok(pitch.frequency_hz>430 && pitch.frequency_hz<450, JSON.stringify(pitch));
+  assert.ok(pitch.midi>68.5 && pitch.midi<69.5, JSON.stringify(pitch));
+  assert.ok(pitch.confidence>0.65);
+});
+
+test('silent signal has no pitch estimate',()=>{
+  const pitch=estimatePitch(new Float32Array(500),8000);
+  assert.equal(pitch.frequency_hz,null);
+  assert.equal(pitch.midi,null);
 });
