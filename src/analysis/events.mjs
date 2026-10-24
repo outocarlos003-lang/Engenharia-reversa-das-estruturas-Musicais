@@ -24,3 +24,10 @@ export function detectMusicalEvents(representation) {
     limitations: [],
   };
 }
+
+/** Returns the ordered musical-event sequence used by the structural pipeline. */
+export function detectEvents(representation) {
+  return [...(representation?.events ?? [])].sort(
+    (a, b) => Number(a.onset ?? a.start ?? 0) - Number(b.onset ?? b.start ?? 0),
+  );
+}
