@@ -18,14 +18,6 @@ O ERM preserva o padrão investigativo do REA, mas troca o domínio de engenhari
 12. **Reconstruction layer** — transforma a análise em especificação independente de DAW.
 13. **Validation layer** — compara referência e reconstrução por relações estruturais.
 
-## Evidência acústica
-
-Características espectrais, energia, transientes, panorama e outras medições acústicas podem ser usadas como **evidência derivada** para inferir propriedades musicais, tímbricas ou de produção. Elas não constituem uma camada da composição por si mesmas.
-
-## O que fica fora
-
-Contêiner, codec, extensão, sample rate, bit depth, tamanho do arquivo e outros metadados do suporte não pertencem ao modelo composicional. Podem existir na infraestrutura de ingestão, mas não devem aparecer como entidades musicais, evidências composicionais ou critérios de reconstrução.
-
 ## Regra de projeto
 
 Nenhuma camada semântica deve apagar dados das camadas inferiores. Uma classificação de gênero ou estética deve continuar rastreável às relações musicais e evidências que contribuíram para a inferência.
