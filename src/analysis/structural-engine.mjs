@@ -111,7 +111,7 @@ export function inferMusicalStructure(inputEvents=[], options={}){
   const assessBoundary=(previous,event,gap)=>{
     const evidence=[];
     let score=0;
-    const explicit=Boolean(event.phrase_boundary_before||event.phrase_start||event.cadence_boundary_before);
+    const explicit=Boolean(event.phrase_boundary_before||event.phrase_start||event.cadence_boundary_before||previous?.phrase_end||previous?.cadence_boundary_after||previous?.boundary_after||previous?.is_phrase_end);
     const declaredPhrase=Boolean(previous&&event.phrase_id!=null&&previous.phrase_id!=null&&event.phrase_id!==previous.phrase_id);
     if(explicit){score=Math.max(score,0.95);evidence.push({type:'source_marker',weight:0.95,observed:true});}
     if(declaredPhrase){score=Math.max(score,0.95);evidence.push({type:'phrase_id_change',weight:0.95,observed:true});}
@@ -133,6 +133,13 @@ export function inferMusicalStructure(inputEvents=[], options={}){
     if(metricBoundary){
       score=Math.min(1,score+0.15);
       evidence.push({type:'metrical_accent',weight:0.15,observed:true,value:Number(metricValue)});
+    }
+    const terminalValue=previous?.cadential_strength??previous?.phrase_terminal_strength??previous?.terminal_strength;
+    if(finite(terminalValue)){
+      const value=Math.max(0,Math.min(1,Number(terminalValue)));
+      const weight=value>=0.75?0.2:value>=0.5?0.1:0;
+      if(weight>0) score=Math.min(1,score+weight);
+      evidence.push({type:'source_cadential_strength',weight,observed:true,value,source_supplied:true,interpretation:'provided harmonic/cadential annotation; not inferred from pitch contour'});
     }
     const previousPitch=previous?pitchOf(previous):null;
     const currentPitch=pitchOf(event);
@@ -222,6 +229,6 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       inferred:['relative interval patterns','motif recurrence','phrase-boundary assessments combining rests, duration, supplied metrical accents, recurring-motif context and descriptive melodic transitions','provisional section groupings','form sequence'],
       unresolved:['meter unless supplied or independently inferred','cadential phrase boundaries','harmonic function unless chord/voice evidence is supplied','instrumentation and style'],
     },
-    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical and recurring-motif evidence; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
+    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical, recurring-motif and source-supplied cadential evidence; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
   };
 }
