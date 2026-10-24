@@ -44,7 +44,7 @@ test('combines a moderate rest with supplied metrical accent and records each ev
   const events=[
     {id:'a',start:0,duration:0.5,pitch:60},
     {id:'b',start:0.5,duration:0.5,pitch:62},
-    {id:'c',start:1.5,duration:0.5,pitch:64,metrical_strength:0.8},
+    {id:'c',start:2,duration:0.5,pitch:64,metrical_strength:0.8},
     {id:'d',start:2,duration:0.5,pitch:65},
   ];
   const result=inferMusicalStructure(events,{phraseBoundaryMinGap:0.5,phraseBoundaryGapRatio:1.25,maxPhraseEvents:16});
