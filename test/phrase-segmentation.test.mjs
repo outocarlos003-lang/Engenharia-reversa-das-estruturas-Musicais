@@ -174,3 +174,28 @@ test('does not infer a chord-symbol cadence without a supplied tonic',()=>{
   const result=inferMusicalStructure(events);
   assert.ok(!result.phrases[1].evidence.basis.some(item=>item.type==='chord_symbol_cadence'));
 });
+
+test('describes common tones and semitone connections from supplied chord pitches without claiming a cadence',()=>{
+  const events=[
+    {id:'a',start:0,duration:1,chord_pitches:[60,64,67]},
+    {id:'b',start:1,duration:1,chord_pitches:[59,64,67],phrase_end:true},
+    {id:'c',start:2,duration:1,chord_pitches:[60,65,69]},
+  ];
+  const result=inferMusicalStructure(events);
+  const evidence=result.phrases[1].evidence.basis.find(item=>item.type==='annotated_voice_leading');
+  assert.ok(evidence);
+  assert.deepEqual(evidence.common_pitch_classes,[4,7]);
+  assert.ok(evidence.semitone_connected_terminal_pitch_classes.includes(11));
+  assert.equal(evidence.weight,0);
+  assert.equal(evidence.source_supplied,true);
+});
+
+test('does not calculate voice-leading evidence from incomplete chord pitch annotations',()=>{
+  const events=[
+    {id:'a',start:0,duration:1,chord_pitches:[60,64,67]},
+    {id:'b',start:1,duration:1,chord_pitches:[59,'unknown',67],phrase_end:true},
+    {id:'c',start:2,duration:1},
+  ];
+  const result=inferMusicalStructure(events);
+  assert.ok(!result.phrases[1].evidence.basis.some(item=>item.type==='annotated_voice_leading'));
+});
