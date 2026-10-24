@@ -152,6 +152,25 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       score=Math.min(1,score+0.25);
       evidence.push({type:'annotated_harmonic_cadence',weight:0.25,observed:true,source_supplied:true,progression:[priorFunction,terminalFunction],classification:cadence.label,interpretation:'recognized from source-supplied harmonic-function labels; not inferred from pitches alone'});
     }
+    const parseChord=label=>{
+      if(typeof label!=='string') return null;
+      const match=label.trim().match(/^([A-Ga-g])([#b]?)(.*)$/);
+      if(!match) return null;
+      const natural={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[match[1].toUpperCase()];
+      const accidental=match[2]==='#'?1:match[2]==='b'?-1:0;
+      const suffix=match[3].trim().toLowerCase();
+      const quality=/^(m|min|minor)(7|9|11|13)?$/.test(suffix)?'minor':/^(dim|°|o)(7)?$/.test(suffix)?'diminished':/^(ø|halfdim)(7)?$/.test(suffix)?'half_diminished':/^(maj|major|mmaj|maj7|ma7|maj9)$/.test(suffix)?'major':/^(7|9|11|13|)$/.test(suffix)?'major':null;
+      return {root:((natural+accidental)%12+12)%12,quality,symbol:label.trim()};
+    };
+    const tonicRaw=previous?.key_tonic??previous?.tonic??event.key_tonic??event.tonic??options.keyTonic??options.tonic;
+    const tonic=parseChord(typeof tonicRaw==='number'?null:tonicRaw);
+    const tonicPitchClass=finite(tonicRaw)&&typeof tonicRaw==='number'?((Number(tonicRaw)%12)+12)%12:tonic?.root;
+    const priorChord=parseChord(priorHarmonicEvent?.chord_symbol??priorHarmonicEvent?.chord);
+    const terminalChord=parseChord(previous?.chord_symbol??previous?.chord);
+    if(tonicPitchClass!==undefined&&tonicPitchClass!==null&&priorChord&&terminalChord&&priorChord.root===(tonicPitchClass+7)%12&&terminalChord.root===tonicPitchClass&&priorChord.quality==='major'&&['major','minor'].includes(terminalChord.quality)){
+      score=Math.min(1,score+0.25);
+      evidence.push({type:'chord_symbol_cadence',weight:0.25,observed:true,source_supplied:true,progression:[priorChord.symbol,terminalChord.symbol],key_tonic:tonicRaw,classification:'dominant_to_tonic',interpretation:'candidate V–I/V–i relation from supplied chord symbols and tonic; not inferred from audio'});
+    }
     const terminalValue=previous?.cadential_strength??previous?.phrase_terminal_strength??previous?.terminal_strength;
     if(finite(terminalValue)){
       const value=Math.max(0,Math.min(1,Number(terminalValue)));
@@ -247,6 +266,6 @@ export function inferMusicalStructure(inputEvents=[], options={}){
       inferred:['relative interval patterns','motif recurrence','phrase-boundary assessments combining rests, duration, supplied metrical accents, recurring-motif context and descriptive melodic transitions','provisional section groupings','form sequence'],
       unresolved:['meter unless supplied or independently inferred','cadential phrase boundaries','harmonic function unless chord/voice evidence is supplied','instrumentation and style'],
     },
-    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical, recurring-motif and source-supplied cadential evidence, including recognized transitions between annotated harmonic functions; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
+    limitations:['Structural output is only as reliable as the symbolic events supplied.','Phrase and section boundaries are hypotheses, not ground truth. Phrase-boundary scores combine temporal, source-declared, optional metrical, recurring-motif and source-supplied cadential evidence, including transitions between annotated harmonic functions and chord-symbol/tonic relations; motif recurrence supports grouping but does not prove a phrase boundary; melodic transitions are descriptive rather than cadence detectors. Expressive pauses may still mislead, and cadences require explicit harmonic or score evidence; chord-symbol cadence checks require chord labels and a supplied tonic.','A repeated contour and rhythm are evidence of structural similarity, not proof of identical musical function.'],
   };
 }
