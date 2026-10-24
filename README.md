@@ -159,6 +159,7 @@ A análise da obra deve combinar atributos perceptivos, contextuais, musicais e 
 | Estrutura de energia | Evolução da intensidade e densidade ao longo do tempo | Curva temporal de energia RMS ou loudness, envelope, transientes, densidade de eventos e mudanças entre intro, versos, refrões, pontes e final |
 | Espectro | Distribuição de energia por frequência e conteúdo tímbrico | Centroide espectral, roll-off, largura de banda, fluxo espectral, bandas de frequência e evolução temporal; considerar a taxa de amostragem |
 | Estéreo | Distribuição espacial entre canais e sensação de largura | Correlação L/R, diferença lateral/central, largura estéreo, panorama e compatibilidade mono; distinguir largura medida de percepção subjetiva |
+| Instrumental / fontes sonoras | Presença de conteúdo vocal e fontes instrumentais identificadas | Instrumentos/fontes documentados, voz cantada ou falada, backing vocals/coral, método de identificação, confiança e limitações |
 
 ### Formato recomendado para cada atributo
 
@@ -181,4 +182,4 @@ A análise da obra deve combinar atributos perceptivos, contextuais, musicais e 
 5. **Registrar incerteza:** tonalidade ambígua, andamento em meio-tempo/dobro-tempo e estimativas estéreo dependentes do arranjo devem permanecer explicitamente incertos.
 6. **Analisar por seção e globalmente:** preservar tanto o resumo da obra quanto a evolução temporal de cada parâmetro.
 
-A especificação detalhada, incluindo definições operacionais e exemplos de evidência, está em [docs/dimensoes-de-analise-musical.md](docs/dimensoes-de-analise-musical.md). O contrato JSON Schema para registros dessas dimensões está em [schemas/musical-dimensions.schema.json](schemas/musical-dimensions.schema.json). O analisador agora inclui `musical_dimensions` no relatório canônico e nas respostas MCP, preservando dados ausentes como desconhecidos ou não avaliados. As dimensões só são inferidas quando há metadados ou evidência simbólica apropriada; loudness, espectro e outras medidas que exigem áudio bruto não são inventadas.
+A especificação detalhada, incluindo definições operacionais e exemplos de evidência, está em [docs/dimensoes-de-analise-musical.md](docs/dimensoes-de-analise-musical.md). O contrato JSON Schema para registros dessas dimensões está em [schemas/musical-dimensions.schema.json](schemas/musical-dimensions.schema.json). O analisador agora inclui `musical_dimensions` no relatório canônico e nas respostas MCP, com treze dimensões — incluindo `instrumental_sound_sources` — preservando dados ausentes como desconhecidos ou não avaliados. As dimensões só são inferidas quando há metadados ou evidência simbólica apropriada; loudness, espectro e outras medidas que exigem áudio bruto não são inventadas.
