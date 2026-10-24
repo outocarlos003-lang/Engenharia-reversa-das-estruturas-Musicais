@@ -145,3 +145,27 @@ test('estimates a cautious fundamental-frequency track without claiming it is vo
   assert.ok(periodic.every(frame => frame.status === 'candidate_periodic_f0'));
   assert.match(result.limitations.at(-1), /not a vocal detector/);
 });
+
+test('summarizes acoustic features only inside explicitly annotated vocal regions', () => {
+  const sampleRate = 8000;
+  const samples = Array.from({ length: sampleRate * 2 }, (_, i) =>
+    i < sampleRate ? 0.2 * Math.sin(2 * Math.PI * 220 * i / sampleRate) : 0.05 * Math.sin(2 * Math.PI * 440 * i / sampleRate)
+  );
+  const result = analyzeAudioSamples({
+    samples,
+    sampleRate,
+    vocalRegions: [
+      { start_seconds: 0.2, end_seconds: 0.8, annotation: 'singing', source: 'human annotation' },
+      { start_seconds: 1.5, end_seconds: 3 },
+      { start_seconds: -1, end_seconds: 0.5 },
+    ],
+  });
+  assert.equal(result.vocal_region_acoustics.length, 2);
+  assert.equal(result.vocal_region_acoustics[0].status, 'acoustic_summary_for_annotated_region');
+  assert.equal(result.vocal_region_acoustics[0].annotation, 'singing');
+  assert.ok(result.vocal_region_acoustics[0].rms > 0);
+  assert.ok(result.vocal_region_acoustics[0].zero_crossing_rate > 0);
+  assert.ok(result.vocal_region_acoustics[0].f0_candidate_frame_count > 0);
+  assert.equal(result.vocal_region_acoustics[1].status, 'insufficient_samples');
+  assert.match(result.vocal_region_acoustics[0].limitations[0], /não validam que a fonte seja vocal/);
+});
