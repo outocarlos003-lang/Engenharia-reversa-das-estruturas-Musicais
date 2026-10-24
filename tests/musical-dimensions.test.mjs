@@ -4,7 +4,7 @@ import { buildMusicalDimensions } from '../src/analysis/musical-dimensions.mjs';
 
 test('builds all fourteen dimensions without inventing absent measurements', () => {
   const result = buildMusicalDimensions({}, { tempo: { bpm: 120 } });
-  assert.equal(Object.keys(result).length, 15);
+  assert.equal(Object.keys(result).length, 16);
   assert.equal(result.tempo.value, 120);
   assert.equal(result.tempo.status, 'inferred');
   assert.equal(result.loudness.value, null);
