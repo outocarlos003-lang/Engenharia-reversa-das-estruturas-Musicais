@@ -2,29 +2,36 @@
 
 **ERM — Reverse Engineer Musical Structures**
 
-Um sistema de engenharia reversa musical inspirado na arquitetura conceitual do [REA](https://github.com/morluto/rea), adaptado para investigar áudio, composição, arranjo, produção e estética.
+Um sistema de engenharia reversa musical inspirado na arquitetura conceitual do [REA](https://github.com/morluto/rea), adaptado para investigar composição, ritmo, harmonia, melodia, motivos, arranjo, forma, instrumentação, dinâmica, espacialidade, produção e estética.
 
-> O objetivo não é apenas classificar uma música. O objetivo é descobrir, com evidências, **como a obra é construída**, representar essa descoberta de forma hierárquica e produzir uma especificação verificável para reconstrução estrutural.
+> O objetivo não é classificar um arquivo de áudio. O objetivo é descobrir, com evidências, **como uma obra musical é construída**, representar essa descoberta de forma hierárquica e produzir uma especificação verificável para reconstrução estrutural.
 
 ## Princípios
 
-- **Evidence first:** toda conclusão aponta para medições, eventos ou comparações que a sustentem.
-- **Observed ≠ inferred ≠ interpreted:** medições acústicas, inferências analíticas e interpretações estéticas ficam explicitamente separadas.
-- **Hierarquia:** arquivo → sinal → eventos → motivos → seções → forma → estética.
-- **Reprodução verificável:** uma reconstrução pode ser comparada com a análise original por estrutura, ritmo, harmonia, densidade, dinâmica, espectro e espacialidade.
-- **Local-first:** o áudio pode ser analisado localmente; nenhuma música de teste é embutida neste repositório.
-- **MCP + CLI:** agentes podem investigar uma faixa por ferramentas MCP ou pelo terminal.
+- **Composition first:** o objeto central é a construção musical, não o formato do arquivo que transporta o áudio.
+- **Evidence first:** toda conclusão aponta para relações musicais observáveis, medições pertinentes ou comparações que a sustentem.
+- **Observed ≠ inferred ≠ interpreted:** observações, inferências analíticas e interpretações estéticas ficam explicitamente separadas.
+- **Hierarquia:** material musical → eventos → motivos → frases → seções → forma → obra.
+- **Reprodução verificável:** uma reconstrução pode ser comparada com a análise original por estrutura, ritmo, métrica, harmonia, melodia, densidade, dinâmica, instrumentação e espacialidade.
+- **Formato independente:** WAV, RIFF, FLAC, MP3 e outros contêineres/codecs não constituem a composição e não são tratados como camadas da arquitetura musical.
+- **MCP + CLI:** agentes podem investigar uma obra por ferramentas MCP ou pelo terminal.
+
+## O que não pertence ao modelo composicional
+
+Informações como extensão do arquivo, contêiner, codec, taxa de amostragem, profundidade de bits, tamanho em bytes e outros metadados técnicos podem ser úteis para ingestão ou reprodução, mas **não são elementos da construção de uma composição**.
+
+Por isso, o ERM não mantém adaptadores de WAV/RIFF ou equivalentes como parte do núcleo de engenharia reversa musical. A fronteira de entrada deve converter uma fonte sonora em representação musical relevante; depois disso, a investigação trabalha sobre a estrutura musical.
 
 ## Equivalência conceitual com REA
 
 | REA | ERM |
 | --- | --- |
-| target/application | faixa/arquivo de áudio |
-| binary/artifact | áudio + metadados |
-| static inspection | análise espectral, harmônica e temporal |
-| runtime observation | playback/event observation, quando habilitado |
-| trace/evidence | evidência acústica e musical |
-| modules/components | instrumentos, camadas, motivos e seções |
+| target/application | obra/fonte musical |
+| binary/artifact | representação musical extraída |
+| static inspection | análise rítmica, melódica, harmônica e estrutural |
+| runtime observation | observação temporal de eventos musicais |
+| trace/evidence | evidência musical |
+| modules/components | instrumentos, camadas, motivos, frases e seções |
 | behavior | dinâmica, arranjo e evolução temporal |
 | reconstruction | reconstruction spec |
 | comparison | structural similarity |
@@ -39,27 +46,28 @@ agent/user
    ↓
 ERM MCP / CLI
    ↓
-probe → feature extraction → segmentation → inference
+musical source → musical representation
+   ↓
+feature extraction → events → motifs → phrases → sections
    ↓
 evidence graph
    ↓
-structure + genre + aesthetics + production
+form + harmony + rhythm + melody + arrangement + aesthetics
    ↓
 reconstruction spec
    ↓
-optional comparison / validation
+comparison / validation
 ```
 
 ## Comandos previstos
 
 ```bash
-erm analyze ./faixa.flac --json
-erm inspect ./faixa.wav --scope signal
-erm segment ./faixa.flac
-erm infer-genre ./faixa.flac
-erm infer-aesthetics ./faixa.flac
-erm build-reconstruction ./faixa.flac
-erm compare ./original.flac ./reconstrucao.flac
+erm analyze <fonte-musical>
+erm segment <fonte-musical>
+erm infer-genre <fonte-musical>
+erm infer-aesthetics <fonte-musical>
+erm build-reconstruction <fonte-musical>
+erm compare <obra-original> <reconstrucao>
 erm mcp
 ```
 
@@ -67,17 +75,19 @@ erm mcp
 
 A primeira versão define o contrato para:
 
-- `inspect_audio_artifact`
-- `extract_audio_features`
+- `extract_musical_features`
 - `detect_tempo_meter`
 - `estimate_harmonic_center`
-- `detect_events`
+- `detect_musical_events`
 - `segment_music`
 - `find_repeated_sections`
 - `analyze_motifs`
+- `analyze_melodic_structure`
+- `analyze_rhythmic_structure`
+- `analyze_harmonic_structure`
 - `analyze_instrument_layers`
 - `analyze_dynamics`
-- `analyze_stereo`
+- `analyze_spatial_structure`
 - `classify_genre`
 - `analyze_aesthetics`
 - `build_reconstruction_spec`
@@ -88,6 +98,6 @@ Cada ferramenta deve retornar evidência, confiança e limitações, seguindo o 
 
 ## Estado atual
 
-Esta versão estabelece o núcleo contratual e a arquitetura. Os analisadores reais devem ser adicionados por camadas, sem transformar inferências subjetivas em fatos medidos.
+Esta versão estabelece o núcleo contratual e a arquitetura. Os analisadores reais devem ser adicionados por camadas, sem transformar inferências subjetivas em fatos medidos e sem confundir metadados do suporte de áudio com elementos composicionais.
 
 **Nenhuma música fornecida em conversas anteriores é usada como fixture ou teste deste projeto.**
