@@ -48,25 +48,40 @@ export function analyzeMotifTransformations(inputEvents=[],options={}){
       if(iois.some(v=>v<=0)) continue;
       windows.push({startIndex:start,endIndex:start+length-1,start:chunk[0]._onset,end:chunk.at(-1)._onset,pitches:numeric,intervals:intervals(numeric),iois,event_ids:chunk.map((e,i)=>e.id??`event-${start+i+1}`)});
     }
-    for(let i=0;i<windows.length;i++) for(let j=i+1;j<windows.length;j++){
-      const a=windows[i],b=windows[j];
-      if(a.endIndex>=b.startIndex) continue;
-      const melodic=melodicRelation(a.pitches,b.pitches);
-      if(!melodic) continue;
-      const rhythm=rhythmRelation(a.iois,b.iois);
-      if(!rhythm) continue;
-      if(melodic.type==='identity'&&rhythm.type==='same_rhythm') continue;
-      output.push({
-        id:`transform-${output.length+1}`,
-        source:{start:a.start,end:a.end,event_ids:a.event_ids},
-        target:{start:b.start,end:b.end,event_ids:b.event_ids},
-        event_count:length,
-        melodic_relation:melodic,
-        rhythmic_relation:rhythm,
-        confidence:melodic.type==='transposition'||melodic.type==='identity'?0.9:0.82,
-        evidence:{basis:['symbolic pitch interval sequence','inter-onset interval ratios'],source_intervals:a.intervals,target_intervals:b.intervals,source_iois:a.iois,target_iois:b.iois},
-        limitations:['Transformation detection depends on event-window length and a monophonic pitch sequence.','A detected mathematical relation does not establish phrase function or compositional intent.'],
-      });
+    const byIntervals=new Map();
+    for(const window of windows){
+      const key=JSON.stringify(window.intervals);
+      const group=byIntervals.get(key)??[];
+      group.push(window);
+      byIntervals.set(key,group);
+    }
+    for(const a of windows){
+      const relatedKeys=[
+        JSON.stringify(a.intervals),
+        JSON.stringify(negate(a.intervals)),
+        JSON.stringify(negate(reverse(a.intervals))),
+        JSON.stringify(reverse(a.intervals)),
+      ];
+      const candidates=new Set(relatedKeys.flatMap(key=>byIntervals.get(key)??[]));
+      for(const b of candidates){
+        if(a.endIndex>=b.startIndex) continue;
+        const melodic=melodicRelation(a.pitches,b.pitches);
+        if(!melodic) continue;
+        const rhythm=rhythmRelation(a.iois,b.iois);
+        if(!rhythm) continue;
+        if(melodic.type==='identity'&&rhythm.type==='same_rhythm') continue;
+        output.push({
+          id:`transform-${output.length+1}`,
+          source:{start:a.start,end:a.end,event_ids:a.event_ids},
+          target:{start:b.start,end:b.end,event_ids:b.event_ids},
+          event_count:length,
+          melodic_relation:melodic,
+          rhythmic_relation:rhythm,
+          confidence:melodic.type==='transposition'||melodic.type==='identity'?0.9:0.82,
+          evidence:{basis:['symbolic pitch interval sequence','inter-onset interval ratios'],source_intervals:a.intervals,target_intervals:b.intervals,source_iois:a.iois,target_iois:b.iois},
+          limitations:['Transformation detection depends on event-window length and a monophonic pitch sequence.','A detected mathematical relation does not establish phrase function or compositional intent.'],
+        });
+      }
     }
   }
   const seen=new Set();
