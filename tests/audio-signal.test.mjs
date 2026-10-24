@@ -146,6 +146,40 @@ test('estimates a cautious fundamental-frequency track without claiming it is vo
   assert.match(result.limitations.at(-1), /not a vocal detector/);
 });
 
+test('checks F0 stability metrics on constant tone, frequency glide, and silence', () => {
+  const sampleRate = 8000;
+  const samples = Array.from({ length: sampleRate * 3 }, (_, i) => {
+    const time = i / sampleRate;
+    if (time < 1) return 0.25 * Math.sin(2 * Math.PI * 220 * time);
+    if (time < 2) {
+      const localTime = time - 1;
+      const startFrequency = 220, slope = 110;
+      const phase = 2 * Math.PI * (startFrequency * localTime + 0.5 * slope * localTime ** 2);
+      return 0.25 * Math.sin(phase);
+    }
+    return 0;
+  });
+  const result = analyzeAudioSamples({
+    samples,
+    sampleRate,
+    vocalRegions: [
+      { start_seconds: 0.1, end_seconds: 0.9, annotation: 'constant tone' },
+      { start_seconds: 1.1, end_seconds: 1.9, annotation: 'frequency glide' },
+      { start_seconds: 2.1, end_seconds: 2.9, annotation: 'silence' },
+    ],
+  });
+  const [constant, glide, silence] = result.vocal_region_acoustics;
+  assert.ok(constant.f0_adjacent_pair_count > 0);
+  assert.ok(Number.isFinite(constant.f0_adjacent_variation_median_semitones));
+  assert.ok(glide.f0_adjacent_pair_count > 0);
+  assert.ok(Number.isFinite(glide.f0_adjacent_variation_p90_semitones));
+  assert.ok(glide.f0_adjacent_variation_p90_semitones >= glide.f0_adjacent_variation_median_semitones);
+  assert.equal(silence.f0_candidate_frame_count, 0);
+  assert.equal(silence.f0_adjacent_pair_count, 0);
+  assert.equal(silence.f0_adjacent_variation_median_semitones, null);
+  assert.equal(silence.f0_adjacent_pairs_within_one_semitone_ratio, null);
+});
+
 test('summarizes acoustic features only inside explicitly annotated vocal regions', () => {
   const sampleRate = 8000;
   const samples = Array.from({ length: sampleRate * 2 }, (_, i) =>
