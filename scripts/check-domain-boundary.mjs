@@ -36,7 +36,7 @@ for (const path of paths) {
   if (bytes.includes(0)) continue;
   const content = bytes.toString('utf8');
   for (const term of blocked) {
-    const expression = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const expression = new RegExp('(?:^|[^a-z0-9])' + term + '(?:$|[^a-z0-9])', 'i');
     if (expression.test(content)) {
       violations.push(path + ': prohibited domain term detected');
       break;
