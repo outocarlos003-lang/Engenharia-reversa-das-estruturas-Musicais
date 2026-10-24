@@ -68,6 +68,8 @@ test('tracks temporal spectral changes separately from energy changes', () => {
   assert.ok(Array.isArray(result.spectral_change_candidates));
   assert.ok(result.spectral_change_candidates.some(candidate => Math.abs(candidate.time_seconds - 2) <= 1));
   assert.ok(result.spectral_change_candidates.every(candidate => candidate.status === 'candidate_spectral_transition'));
+  assert.ok(Array.isArray(result.combined_transition_candidates));
+  assert.ok(result.combined_transition_candidates.some(candidate => candidate.evidence_types.includes('spectrum')));
 });
 
 test('rejects invalid PCM input', () => {
