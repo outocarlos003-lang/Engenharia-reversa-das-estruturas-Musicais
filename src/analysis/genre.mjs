@@ -62,7 +62,7 @@ export function classifyGenre(representation, profiles = []) {
     confidence: best ? Math.min(1, best.score * 0.8 + margin * 0.2) : 0,
     limitations: profiles.length
       ? ['Genre inference depends on the supplied reference profiles and should not be treated as an ontological label.']
-      : ['No genre reference profiles were supplied; genre inference is unavailable.'],
+      : ['No foram fornecidos perfis de referência; a inferência de gênero está indisponível.'],
   };
 }
 
